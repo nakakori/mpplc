@@ -1,0 +1,60 @@
+program change ;
+	var n , count : integer ;
+begin
+	writeln ( 'STRING' ) ;
+	readln ( n ) ;
+	count := NUMBER ;
+	while n > NUMBER do
+	begin
+		while n >= NUMBER do
+		begin
+			while n >= NUMBER do
+			begin
+				while n >= NUMBER do
+				begin
+					while n >= NUMBER do
+					begin
+						count := count + NUMBER ;
+						n := n - NUMBER ;
+
+					end ;
+					if count > NUMBER then
+						writeln ( 'STRING' , count ) ;
+					count := NUMBER ;
+					if n < NUMBER then
+						break ;
+					count := count + NUMBER ;
+					n := n - NUMBER ;
+
+				end ;
+				if count > NUMBER then
+					writeln ( 'STRING' , count ) ;
+				count := NUMBER ;
+				if n < NUMBER then
+					break ;
+				count := count + NUMBER ;
+				n := n - NUMBER ;
+
+			end ;
+			if count > NUMBER then
+				writeln ( 'STRING' , count ) ;
+			count := NUMBER ;
+			if n < NUMBER then
+				break ;
+			count := count + NUMBER ;
+			n := n - NUMBER ;
+
+		end ;
+		if count > NUMBER then
+			writeln ( 'STRING' , count ) ;
+		count := NUMBER ;
+		if n < NUMBER then
+			break ;
+		count := count + NUMBER ;
+		n := n - NUMBER ;
+
+	end ;
+	if count > NUMBER then
+		writeln ( 'STRING' , count ) ;
+
+end . 

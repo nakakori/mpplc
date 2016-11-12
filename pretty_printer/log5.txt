@@ -1,0 +1,15 @@
+program branchtest ;
+	var i , j , k : integer ;
+begin
+	if i > NUMBER then
+		if j > NUMBER then
+	begin
+		j := j + NUMBER ;
+		if k < NUMBER then
+			k := k + NUMBER 
+	else
+		k:=k+j
+end 
+else
+	j:=i
+end . 

@@ -1,0 +1,50 @@
+#Makefile for tc_test
+
+# Redefine Macro
+CC	= gcc
+CFLAGS	= -Wall -Wextra -DTEST
+# Target
+TRGTDIR	= ./bin
+TARGET	= ${TRGTDIR}/tc_test
+# Source
+SRCDIR	= ./src
+SOURCE	= ${wildcard ${SRCDIR}/*.c}
+TSRCDIR	= ./test_src
+TSOURCE	= ${SOURCE} ${wildcard ${TSRCDIR}/*.c}
+# Objects
+ROBJDIR = ./obj
+OBJDIR	= ${ROBJDIR}/${TSRCDIR:./=}
+OBJECTS	= ${addprefix ${OBJDIR}/, ${notdir ${TSOURCE:.c=.o}}}
+
+.PHONY: all clean
+
+all:	${TARGET}
+
+${TARGET}:	${OBJECTS}
+	@if [ ! -d ${TRGTDIR} ]; \
+		then echo "Create binary directory"; mkdir -p ${TRGTDIR}; \
+		fi
+	@echo "Building target $@"
+	${CC} -o $@ $^
+	@echo "Finished building target: $@"
+
+${OBJDIR}/%.o: ${SRCDIR}/%.c
+	@if [ ! -d ${ROBJDIR} ]; \
+		then echo "Create objects directory."; mkdir -p ${ROBJDIR}; \
+		fi
+	@if [ ! -d ${OBJDIR} ]; \
+		then mkdir -p ${OBJDIR}; \
+		fi
+	${CC} ${CFLAGS} -o $@ -c $<
+
+${OBJDIR}/%.o: ${TSRCDIR}/%.c
+	@if [ ! -d ${ROBJDIR} ]; \
+		then echo "Create objects directory."; mkdir -p ${ROBJDIR}; \
+		fi
+	@if [ ! -d ${OBJDIR} ]; \
+		then mkdir -p ${OBJDIR}; \
+		fi
+	${CC} ${CFLAGS} -o $@ -c $<
+
+clean:
+	${RM} ${OBJECTS} ${TARGET}

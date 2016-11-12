@@ -1,0 +1,3 @@
+
+ ERROR: string length is over
+Line count:	1

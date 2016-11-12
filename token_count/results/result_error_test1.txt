@@ -1,0 +1,3 @@
+
+ ERROR: syntax error
+Line count:	2

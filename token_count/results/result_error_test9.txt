@@ -1,0 +1,3 @@
+
+ ERROR: line don't break in string
+Line count:	1

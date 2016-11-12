@@ -1,0 +1,102 @@
+extern int init_scan(char *filename);
+一文字目がEOF
+ok
+no
+100
+
+extern int scan(void);
+cbufのタイプ
+100%
+
+extern int get_linenum(void);
+100
+
+extern void end_scan(void);
+fpがNULL
+100
+
+static enum CHAR_T check_char(int c);
+cが各タイプ
+100
+
+static sbool is_alphabet(int c);
+cがアルファベットである
+ok
+no
+100
+
+static sbool is_number(int c);
+100
+static sbool is_symbol(int c);
+100
+static sbool is_string(int c);
+100
+static sbool is_separator(int c);
+100
+static sbool is_newline(int c);
+100
+static sbool is_comment(int c);
+100
+
+static void init_string_attr();
+100
+
+static int get_key_token(void);
+cbufがEOFである cbufが改行、空白、シンボル、文字列である カウンタがMAXSTRSIZE以上 文字列とキーワードが同じ
+ok - ok - 4
+ok - no ok 2
+ok - no no 2
+no no ok - 2
+no ok no ok 1
+no ok no no1
+12/16
+75
+
+static int get_number_token(void);
+cbufがEOF cbufがnew,sep,symである countがMAXSTRSIZE以上 stringの最後がアルファベット numが32767より大きい
+ok - ok - - 8
+ok - no ok -
+ok - no no ok
+ok - no no no
+no no ok - -  4
+no ok no ok - 2
+no ok no no ok 1
+no ok no no no 1
+16/32
+50
+
+static int get_symbol_token(void);
+14/15
+93
+
+static int get_string_token(void);
+cbufがEOF cbufが\' cbufがEOF flagがstrue flagがstrue cbufが\'でない cbufがeof cbufが改行 countがMAXSTRSIZE以上
+ok - - - - - - - -
+no no no - no - - no -
+no no ok no - - - - -
+no ok ok ok - - - - no
+no no no - no - - ok -
+no ok no - ok no no - -
+no ok no - ok ok - - no
+no ok no - ok ok - - ok
+360/512
+70
+
+static void skip_comment(void);
+commentタイプが\ while回る cbufがeof 改行あり cbufがend_char cbufがeofかつスラッシュ コメントがスラッシュ cbufがスラッシュ
+ok no - - - - - - 64
+ok ok no no no - - - 8
+ok ok no ok no - - - 8
+ok ok no ok ok no ok no 1
+ok ok no ok ok no ok ok 1
+ok ok ok - - - - -  32
+no no - - - - - - 64
+no ok no no - - - - 16
+no ok no ok no - - - 8
+no ok no ok ok - - - 8
+no ok ok - - - - -  32
+242/256
+94.5
+
+static int file_getc(void);
+100

@@ -1,0 +1,3 @@
+
+ ERROR: comment out is not closed.
+Line count:	2

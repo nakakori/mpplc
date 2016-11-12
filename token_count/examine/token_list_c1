@@ -1,0 +1,21 @@
+トークンがある トークンが名前 カウンタが0でない 名前が1以上
+no  -   no  -
+ok  no  ok  no
+ok  ok  ok  ok
+
+no  no  no  no 1
+no  no  no  ok 1
+no  no  ok  no
+no  no  ok  ok
+no  ok  no  no 1
+no  ok  no  ok 1
+no  ok  ok  no
+no  ok  ok  ok
+ok  no  no  no
+ok  no  no  ok
+ok  no  ok  no 1
+ok  no  ok  ok
+ok  ok  no  no
+ok  ok  no  ok
+ok  ok  ok  no
+ok  ok  ok  ok 1

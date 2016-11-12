@@ -1,0 +1,28 @@
+init_idtab
+100
+
+search_idtab
+pがNUllでない npとp->nameが一致する
+no  -
+ok  no
+ok ok
+100%
+
+id_countup
+pがNULLでない(もう登録済み)
+no
+ok
+
+100%
+
+print_idtab
+pがNULLでない  カウンタが0でない
+no  -
+ok  ok
+75%
+
+release_idtab
+pがNULLでない
+no
+ok
+100

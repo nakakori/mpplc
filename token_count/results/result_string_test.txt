@@ -1,0 +1,6 @@
+
+ ERROR: string length is over
+"NAME      "	1
+	"Identifier" "s"	1
+"STRING    "	8
+Line count:	10

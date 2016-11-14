@@ -4,6 +4,8 @@ SYNTAX_TREE *synroot; /* root of syntax tree */
 static SYNTAX_TREE **curroot; /* current root */
 
 static sresult search_curlist(SYNTAX_TREE *root);
+static int *num_alloc();
+static char *str_alloc();
 
 /* ********************************
  * initilize syntax tree
@@ -44,9 +46,21 @@ void register_syntree(int t){
     (p->data).token = t;
     if(t == TNAME){
         id_countup(string_attr);
-        (p->data).id_pointer = search_idtab(string_attr);
+        p->data.id_pointer = search_idtab(string_attr);
+        p->data.num_pointer = NULL;
+        p->data.str_pointer = NULL;
+    }else if(t == TNUMBER){
+        p->data.id_pointer = NULL;
+        p->data.num_pointer = num_alloc();
+        p->data.str_pointer = str_alloc();
+    }else if(t == TSTRING){
+        p->data.id_pointer = NULL;
+        p->data.num_pointer = NULL;
+        p->data.str_pointer = str_alloc();
     }else{
-        (p->data).id_pointer = NULL;
+        p->data.id_pointer = NULL;
+        p->data.num_pointer = NULL;
+        p->data.str_pointer = NULL;
     }
     p->child = NULL;
     p->next = NULL;
@@ -111,4 +125,24 @@ sresult search_curlist(SYNTAX_TREE *root){
 void release_syntree(void){
     release_idtab();
     /* free() */
+}
+
+static int *num_alloc(){
+    int *p;
+
+    if((p = (int *)malloc(sizeof(int))) == NULL) {
+        printf("can not malloc in num_alloc\n");
+    }
+    *p = num_attr;
+    return p;
+}
+
+static char *str_alloc(){
+    char *p;
+
+    if((p = (char *)malloc(strlen(string_attr)+1)) == NULL) {
+        printf("can not malloc in str_alloc\n");
+    }
+    strcpy(p, string_attr);
+    return p;
 }

@@ -3,12 +3,15 @@ var i, j, k: integer;
 begin
     if i > 10 then
         if j > 19 then
-        begin
-            j := j +1;
-            if k < 10 then
-                k := k+1
+            if j > 10 then
+                j := j+1
             else
-                k := k+j
+            begin
+                j := j +1;
+                if k < 10 then
+                    k := k+1
+                else
+                    k := k+j
         end
         else
             j := i

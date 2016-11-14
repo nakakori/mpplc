@@ -3,13 +3,33 @@ program branchtest ;
 begin
 	if i > NUMBER then
 		if j > NUMBER then
-	begin
-		j := j + NUMBER ;
-		if k < NUMBER then
-			k := k + NUMBER 
+		begin
+			j := j + NUMBER ;
+			if k < NUMBER then
+				k := k + NUMBER
+			else
+				k:=k+j
+		end
 	else
-		k:=k+j
-end 
-else
-	j:=i
-end . 
+		j:=i
+end .
+
+(indent:1, comp:1)
+if 0 (indent:1, branchindent:1, branch:1)
+	i > NUMBER
+then 0 (indent:2, ifflag:true)
+	if 0 (indent:2, branchflag:2, branch:2)
+		j > NUMBER
+	then 0 (indent:3, ifflag:true)
+		begin 0 (indent:3, branchflag:3, comp:2)
+			exp
+		; 0
+			if 0
+				k < NUMBER
+			then 0
+				exp
+			else 0
+				exp
+		end
+	else 0
+		exp

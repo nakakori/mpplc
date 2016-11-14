@@ -37,16 +37,19 @@ int main(int argc, char *argv[]) {
 static int indent = 0;
 static pbool line = PFALSE; // PTRUE: need indent, PFALSE: no indent
 static int comp = 0; // compound count
-// static pbool loop = PFALSE;
+static pbool semiflag = PFALSE;
 // static pbool endflag = PFALSE;
 // static pbool paramflag = PFALSE;
 // static pbool nameflag = PFALSE;
-static int branchindent = 0;
+// static int branchindent = 0;
+static int branch = 0; // branch count
 static pbool ifflag = PFALSE;
-static pbool elseflag = PFALSE; // PTRUE: else, PFALSE: none
+// PTRUE: else statement, PFALSE: else if~ or none
+static pbool elseflag = PFALSE;
 void pretty_print(SYNTAX_TREE *root){
     SYNTAX_TREE *p;
     p = root;
+	int branchindent = 0;
 
     while (p != NULL) {
         /* config before print token */
@@ -58,8 +61,8 @@ void pretty_print(SYNTAX_TREE *root){
          * branchindent save indent value
          * token = "begin": indent--
          */
-        if(p->data.token == TIF && branchindent == 0){
-            branchindent = indent;
+        if(p->data.token == TIF){
+			branchindent = indent;
         }else if(p->data.token == TBEGIN){
             indent--;
         }
@@ -68,8 +71,13 @@ void pretty_print(SYNTAX_TREE *root){
          * token = "end"
          * token = "else"
          */
+		if(p->data.token != TEND && semiflag == PTRUE){
+			semiflag = PFALSE;
+		}
         if(p->data.token == TEND){
-            print_newline();
+            if(semiflag == PFALSE){
+				print_newline();
+			}
             comp--;
             indent--;
         }else if(p->data.token == TELSE){
@@ -92,24 +100,28 @@ void pretty_print(SYNTAX_TREE *root){
          */
         if(p->data.token == TSEMI){
             print_newline();
+			semiflag = PTRUE;
         }else if(p->data.token == TBEGIN){
-            if(elseflag == PTRUE) indent++;
-            else if(ifflag == PTRUE) indent++;
+            if(ifflag == PTRUE) indent++;
             print_newline();
             comp++;
             indent++;
-        }else if(p->data.token == TDO || p->data.token == TTHEN){
+        }else if(p->data.token == TDO){
             print_newline();
             indent++;
-            if(p->data.token == TTHEN){
-                ifflag = PTRUE;
-            }
-        }else if(p->data.token == TELSE){
-            if(p->next != NULL && p->next->child != NULL && p->next->child->data.token != TIF){
+        }else if(p->data.token == TTHEN){
+			print_newline();
+            indent++;
+			if(!(p->next->child != NULL && p->next->child->data.token == TIF)){
+				ifflag = PTRUE;
+			}
+		}
+		else if(p->data.token == TELSE){
+            if(!(p->next->child != NULL && p->next->child->data.token == TIF)){
                 print_newline();
                 indent++;
                 elseflag = PTRUE;
-                branchindent = 0;
+				branch--;
             }
         }else if(p->data.token == TEND){
         }
@@ -139,6 +151,9 @@ void pretty_print(SYNTAX_TREE *root){
                 indent--;
                 if(indent<0) indent = 0;
             }
+			if(branchindent > 0){
+				indent = branchindent;
+			}
         }
         p = p->next;
     }
@@ -148,9 +163,10 @@ void print_token(DATA data){
     if(data.token == TNAME){
         printf("%s", data.id_pointer->name);
     }else if(data.token == TSTRING){
-        // change token_str[] => data.str_pointer
-        printf("'%s'", token_str[data.token]);
-    }else if(data.token != 0){
+        printf("'%s'", data.str_pointer);
+    }else if(data.token == TNUMBER){
+		printf("%d", *(data.num_pointer));
+	}else if(data.token != 0){
         printf("%s", token_str[data.token]);
     }
 }
@@ -169,12 +185,14 @@ void print_newline(void){
     line = PTRUE;
     if(elseflag == PTRUE){
         elseflag = PFALSE;
-        indent--;
-    }else if(ifflag == PTRUE){
+    }
+	if(ifflag == PTRUE){
         ifflag = PFALSE;
         indent--;
     }
-    // nameflag = PFALSE;
+	if(semiflag == PTRUE){
+		semiflag = PFALSE;
+	}
 }
 
 void print_space(void){

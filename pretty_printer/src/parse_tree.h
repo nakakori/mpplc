@@ -13,6 +13,8 @@
 struct _DATA {
     int token;
     struct ID *id_pointer;
+    int *num_pointer;
+    char *str_pointer;
 };
 typedef struct _DATA DATA;
 

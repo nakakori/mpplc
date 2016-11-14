@@ -72,10 +72,10 @@ static void create_errmes(char *mes){
     sprintf(errmes, "Line %d: %s\n next token: %d", get_linenum(), mes, token);
 }
 
-/* *********************************************
+/*
  * start parse program
  * program ::= "program" "NAME" ";" block "."
- * ********************************************* */
+ */
 extern int parse_program(void){
     init_node();
 

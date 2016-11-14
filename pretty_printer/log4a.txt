@@ -1,12 +1,12 @@
 program sample29 ;
 	var unused1 : integer ;
-		UnusedArrayForTest : array [ NUMBER ] of char ;
+		UnusedArrayForTest : array [ 200 ] of char ;
 	procedure gcmlcm ( m , n , gc , lc : integer ) ;
 		var a , b , r : integer ;
 	begin
 		a := m ;
 		b := n ;
-		while b <> NUMBER do
+		while b <> 0 do
 		begin
 			r := a - ( a div b ) * b ;
 			a := b ;
@@ -17,7 +17,7 @@ program sample29 ;
 	end ;
 	procedure abs ( a , b : integer ) ;
 	begin
-		if a < NUMBER then
+		if a < 0 then
 			b := - a 
 		else
 			b:=a
@@ -25,8 +25,8 @@ program sample29 ;
 	procedure gcm ( a , b , gc : integer ) ;
 		var lc , aa , bb : integer ;
 	begin
-		if ( a = NUMBER ) or ( b = NUMBER ) then
-			gc := NUMBER 
+		if ( a = 0 ) or ( b = 0 ) then
+			gc := 1 
 		else
 		begin
 			call abs ( a , aa ) ;
@@ -37,8 +37,8 @@ program sample29 ;
 	procedure lcm ( a , b , lc : integer ) ;
 		var gc , aa , bb : integer ;
 	begin
-		if ( a = NUMBER ) or ( b = NUMBER ) then
-			lc := NUMBER 
+		if ( a = 0 ) or ( b = 0 ) then
+			lc := 1 
 		else
 		begin
 			call abs ( a , aa ) ;
@@ -50,17 +50,17 @@ program sample29 ;
 	procedure reduce ( a1 , a2 : integer ) ;
 		var gc : integer ;
 	begin
-		if a1 = NUMBER then
+		if a1 = 0 then
 		begin
-			a2 := NUMBER ;
+			a2 := 1 ;
 			return 
 		end ;
-		if a2 = NUMBER then
+		if a2 = 0 then
 		begin
-			a1 := NUMBER ;
+			a1 := 1 ;
 			return 
 		end ;
-		if a2 < NUMBER then
+		if a2 < 0 then
 		begin
 			a1 := - a1 ;
 			a2 := - a2 
@@ -101,63 +101,63 @@ program sample29 ;
 	begin
 		call mult ( x1 , x2 , y2 , y1 ) 
 	end ;
-	var unusedarray : array [ NUMBER ] of char ;
+	var unusedarray : array [ 100 ] of char ;
 	procedure printfinal ( a , b : integer ) ;
 	begin
-		if a = NUMBER then
-			writeln ( 'STRING' , a ) 
-		else if b = NUMBER then
-			writeln ( 'STRING' , a ) 
+		if a = 0 then
+			writeln ( 'Final Result =' , a ) 
+		else if b = 1 then
+			writeln ( 'Final Result =' , a ) 
 		else
-			writeln('STRING',a,'STRING',b)
+			writeln('Final Result =',a,'/',b)
 	end ;
 	procedure printtemp ( a , b : integer ) ;
 	begin
-		if a = NUMBER then
-			writeln ( 'STRING' , a ) 
-		else if b = NUMBER then
-			writeln ( 'STRING' , a ) 
+		if a = 0 then
+			writeln ( 'Temporary Result =' , a ) 
+		else if b = 1 then
+			writeln ( 'Temporary Result =' , a ) 
 		else
-			writeln('STRING',a,'STRING',b)
+			writeln('Temporary Result =',a,'/',b)
 	end ;
 	var x1 , x2 , y1 , y2 : integer ;
 	var com : char ;
 		endflag : boolean ;
 begin
-	writeln ( 'STRING' ) ;
-	x1 := NUMBER ;
-	x2 := NUMBER ;
+	writeln ( '   *** Calculator -- h for help ***' ) ;
+	x1 := 0 ;
+	x2 := 1 ;
 	endflag := false ;
 	while not endflag do
 	begin
-		writeln ( 'STRING' ) ;
+		writeln ( ' Please input command :' ) ;
 		readln ( com , y1 ) ;
-		y2 := NUMBER ;
-		if ( com = 'STRING' ) or ( com = 'STRING' ) then
+		y2 := 1 ;
+		if ( com = 'c' ) or ( com = 'C' ) then
 		begin
 			x1 := y1 ;
 			x2 := y2 
 		end 
-		else if com = 'STRING' then
+		else if com = '+' then
 			call sum ( x1 , x2 , y1 , y2 ) 
-		else if com = 'STRING' then
+		else if com = '-' then
 			call sub ( x1 , x2 , y1 , y2 ) 
-		else if com = 'STRING' then
+		else if com = '*' then
 			call mult ( x1 , x2 , y1 , y2 ) 
-		else if com = 'STRING' then
+		else if com = '/' then
 			call divide ( x1 , x2 , y1 , y2 ) 
-		else if ( com = 'STRING' ) or ( com = 'STRING' ) then
+		else if ( com = 'o' ) or ( com = 'O' ) then
 			endflag := true 
 		else
 		begin
 			writeln ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
-			writeln ( 'STRING' ) ;
+			writeln ( 'Calculator Usage:' ) ;
+			writeln ( '  c number : clear & set it' ) ;
+			writeln ( '  + number : add it' ) ;
+			writeln ( '  - number : subtract it' ) ;
+			writeln ( '  * number : multiply it' ) ;
+			writeln ( '  / number : divide by it' ) ;
+			writeln ( '  o        : off(terminate execution)' ) ;
 			writeln 
 		end ;
 		if endflag then

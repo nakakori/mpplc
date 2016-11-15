@@ -38,10 +38,8 @@ static int indent = 0;
 static pbool line = PFALSE; // PTRUE: need indent, PFALSE: no indent
 static int comp = 0; // compound count
 static pbool semiflag = PFALSE;
-// static pbool endflag = PFALSE;
 // static pbool paramflag = PFALSE;
 // static pbool nameflag = PFALSE;
-// static int branchindent = 0;
 static int branch = 0; // branch count
 static pbool ifflag = PFALSE;
 // PTRUE: else statement, PFALSE: else if~ or none
@@ -123,7 +121,6 @@ void pretty_print(SYNTAX_TREE *root){
                 elseflag = PTRUE;
 				branch--;
             }
-        }else if(p->data.token == TEND){
         }
         /*
          * space conditions
@@ -135,10 +132,8 @@ void pretty_print(SYNTAX_TREE *root){
          *              "(" | ")" | "[" | "]" : no space
          * previous newline: no space
          */
-        if(p->data.token != 0){
-            if(p->data.token != TSEMI && p->data.token != TBEGIN && p->data.token != TDO && p->data.token != TTHEN && elseflag != PTRUE){
-                print_space();
-            }
+        if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || elseflag == PTRUE)){
+			print_space();
         }
 
         /* config next token */
@@ -153,6 +148,7 @@ void pretty_print(SYNTAX_TREE *root){
             }
 			if(branchindent > 0){
 				indent = branchindent;
+				ifflag = PFALSE;
 			}
         }
         p = p->next;

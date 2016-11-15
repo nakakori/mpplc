@@ -12,7 +12,7 @@ begin
 					k := k + 1 
 				else
 					k:=k+j
-			end 
+			end
 		else
 			j:=i
-end . 
+end. 

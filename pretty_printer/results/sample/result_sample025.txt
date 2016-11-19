@@ -1,9 +1,4 @@
 
  ERROR: Line 6: Keyword 'end' is not found
  next token: 10
-program ifst ;
-	var ch : char ;
-begin
-	readln (ch);
-	if ch = 'a' then
-		writeln ('It is ''a'' ' );
+finish parsing program.

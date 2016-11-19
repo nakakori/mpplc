@@ -1,5 +1,4 @@
 
  ERROR: Line 2: ':' is not found
  next token: 1
-program assignboolean ;
-	var x
+finish parsing program.

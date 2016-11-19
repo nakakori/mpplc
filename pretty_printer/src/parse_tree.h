@@ -38,6 +38,6 @@ extern void init_syntree(void);
 extern void init_node(void);
 extern void register_syntree(int t);
 extern void end_list_node(void);
-extern void release_syntree(void);
+extern void release_data(void);
 
 #endif /* _PRASE_TREE_H_ */

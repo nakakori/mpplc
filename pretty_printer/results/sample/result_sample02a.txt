@@ -1,26 +1,4 @@
 
  ERROR: Line 11: 'break' is only used loop statement
  next token: 49
-program TeaBreak ;
-begin
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	writeln ('Say "BREAK!!" ' );
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
-	;
+finish parsing program.

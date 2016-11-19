@@ -1,7 +1,4 @@
 
  ERROR: Line 3: ')' is not found
  next token: 1
-program Write ;
-begin
-	;
-	writeln ('It' 
+finish parsing program.

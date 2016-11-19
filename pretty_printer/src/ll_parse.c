@@ -63,7 +63,7 @@ extern int init_ll_parse(char *filename){
 
 /* end LL parse */
 extern void end_ll_parse(void){
-    release_syntree();
+    release_data();
     end_scan();
 }
 

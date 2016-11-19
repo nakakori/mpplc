@@ -4,6 +4,7 @@ SYNTAX_TREE *synroot; /* root of syntax tree */
 static SYNTAX_TREE **curroot; /* current root */
 
 static sresult search_curlist(SYNTAX_TREE *root);
+static void release_syntree(SYNTAX_TREE *root);
 static int *num_alloc();
 static char *str_alloc();
 
@@ -122,9 +123,29 @@ sresult search_curlist(SYNTAX_TREE *root){
     return NOTFOUND;
 }
 
-void release_syntree(void){
+void release_data(void){
     release_idtab();
-    /* free() */
+    release_syntree(synroot);
+}
+
+void release_syntree(SYNTAX_TREE *root){
+    SYNTAX_TREE *p, *q;
+    p = root;
+
+    while(p != NULL){
+        if(p->child != NULL){
+            release_syntree(p->child);
+        }
+        if(p->data.num_pointer != NULL){
+            free(p->data.num_pointer);
+        }
+        if(p->data.str_pointer != NULL){
+            free(p->data.str_pointer);
+        }
+        q = p->next;
+        free(p);
+        p = q;
+    }
 }
 
 static int *num_alloc(){

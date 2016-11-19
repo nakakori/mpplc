@@ -1,5 +1,4 @@
 
  ERROR: Line 2: Keyword 'begin' is not found
  next token: 46
-program assignchar ;
-	var x, y : char ;
+finish parsing program.

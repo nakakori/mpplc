@@ -25,7 +25,10 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    parse_program();
+    if(parse_program() < 0){
+		printf("finish parsing program.\n");
+		return 0;
+	}
 
     pretty_print(synroot);
 

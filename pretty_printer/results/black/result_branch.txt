@@ -1,5 +1,5 @@
 program branchtest ;
-	var i , j , k : integer ;
+	var i, j, k : integer ;
 begin
 	if i > 10 then
 		if j > 19 then

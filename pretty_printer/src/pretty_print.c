@@ -39,7 +39,7 @@ static pbool line = PFALSE; // PTRUE: need indent, PFALSE: no indent
 static int comp = 0; // compound count
 static pbool semiflag = PFALSE;
 // static pbool paramflag = PFALSE;
-// static pbool nameflag = PFALSE;
+static pbool nameflag = PFALSE;
 static int branch = 0; // branch count
 static pbool ifflag = PFALSE;
 // PTRUE: else statement, PFALSE: else if~ or none
@@ -85,6 +85,13 @@ void pretty_print(SYNTAX_TREE *root){
         if(line == PTRUE && p->data.token != 0){
             print_indent();
         }
+		/* space */
+		if(nameflag == PTRUE){
+			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA)){
+				print_space();
+				nameflag = PFALSE;
+			}
+		}
         /* print token */
         print_token(p->data);
 
@@ -126,14 +133,24 @@ void pretty_print(SYNTAX_TREE *root){
          * space conditions
          * token = keyword
          * token = "NAME":
-         *     next token = operator
-         *
+         *     nameflag -> PTRUE
+		 *     nameflag = PTRUE:
+		 *         after print some token, reset.
          * next token = ";" | "," | ":" |
          *              "(" | ")" | "[" | "]" : no space
          * previous newline: no space
          */
-        if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || elseflag == PTRUE)){
-			print_space();
+		if(p->data.token != 0 && nameflag == PTRUE){
+			nameflag = PFALSE;
+		}
+		if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || p->data.token == TRPAREN || elseflag == PTRUE)){
+			 if(p->next != NULL && !(p->next->data.token == TRSQPAREN || p->next->data.token == TCOMMA)){
+				 print_space();
+			 }else if(p->data.token == TNAME){
+				 nameflag = PTRUE;
+			 }else{
+				 print_space();
+			 }
         }
 
         /* config next token */

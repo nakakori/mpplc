@@ -1,0 +1,12 @@
+
+ ERROR: Line 6: Keyword 'write'/'writeln' is not found
+ next token: 48
+program IfstTC ;
+	var ch : char ;
+		int : integer ;
+		boolx, booly : boolean ;
+begin
+	boolx := true ;
+	booly := false ;
+	ch := 'a' ;
+	int := 66 ;

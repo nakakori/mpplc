@@ -1,5 +1,0 @@
-program assigninteger ; 
-var n: integer ;
-begin
-    n:= (NUMBER * NUMBER)+ NUMBER
-end.

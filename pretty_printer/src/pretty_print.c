@@ -40,13 +40,18 @@ int main(int argc, char *argv[]) {
 static int indent = 0;
 static pbool line = PFALSE; // PTRUE: need indent, PFALSE: no indent
 static int comp = 0; // compound count
-static pbool semiflag = PFALSE;
-// static pbool paramflag = PFALSE;
-static pbool nameflag = PFALSE;
 static int branch = 0; // branch count
 static pbool ifflag = PFALSE;
 // PTRUE: else statement, PFALSE: else if~ or none
 static pbool elseflag = PFALSE;
+static pbool semiflag = PFALSE;
+// static pbool paramflag = PFALSE;
+static pbool nameflag = PFALSE;
+static pbool boolflag = PFALSE;
+static pbool numflag = PFALSE;
+static pbool strflag = PFALSE;
+static pbool parflag = PFALSE;
+
 void pretty_print(SYNTAX_TREE *root){
     SYNTAX_TREE *p;
     p = root;
@@ -90,9 +95,33 @@ void pretty_print(SYNTAX_TREE *root){
         }
 		/* space */
 		if(nameflag == PTRUE){
-			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA)){
+			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA || p->data.token == TSEMI || p->data.token == TCOLON)){
 				print_space();
 				nameflag = PFALSE;
+			}
+		}
+		if(boolflag == PTRUE){
+			if(p->data.token != 0 && !(p->data.token == TSEMI)){
+				print_space();
+				boolflag = PFALSE;
+			}
+		}
+		if(numflag == PTRUE){
+			if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TRSQPAREN || p->data.token == TRPAREN)){
+				print_space();
+				numflag = PFALSE;
+			}
+		}
+		if(strflag == PTRUE){
+			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA)){
+				print_space();
+				strflag = PFALSE;
+			}
+		}
+		if(parflag == PTRUE){
+			if(p->data.token != 0 && !(p->data.token == TSEMI)){
+				print_space();
+				parflag = PFALSE;
 			}
 		}
         /* print token */
@@ -143,17 +172,44 @@ void pretty_print(SYNTAX_TREE *root){
          *              "(" | ")" | "[" | "]" : no space
          * previous newline: no space
          */
-		if(p->data.token != 0 && nameflag == PTRUE){
-			nameflag = PFALSE;
+		if(p->data.token != 0){
+			if(nameflag == PTRUE){
+				nameflag = PFALSE;
+			}
+			if(boolflag == PTRUE){
+				boolflag = PFALSE;
+			}
+			if(numflag == PTRUE){
+				numflag = PFALSE;
+			}
+			if(strflag == PTRUE){
+				strflag = PFALSE;
+			}
+			if(parflag == PTRUE){
+				parflag = PFALSE;
+			}
 		}
-		if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || p->data.token == TRPAREN || elseflag == PTRUE)){
-			 if(p->next != NULL && !(p->next->data.token == TRSQPAREN || p->next->data.token == TCOMMA)){
-				 print_space();
-			 }else if(p->data.token == TNAME){
-				 nameflag = PTRUE;
-			 }else{
-				 print_space();
-			 }
+
+		if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || p->data.token == TINTEGER || p->data.token == TCHAR || p->data.token == TBOOLEAN ||elseflag == PTRUE)){
+			if(p->data.token == TNAME){
+				nameflag = PTRUE;
+			}else if(p->data.token == TTRUE || p->data.token == TFALSE){
+				boolflag = PTRUE;
+			}else if(p->data.token == TNUMBER){
+				numflag = PTRUE;
+			}else if(p->data.token == TSTRING){
+				strflag = PTRUE;
+			}else if(p->data.token == TRPAREN){
+				parflag = PTRUE;
+			}else if(p->data.token == TWRITE || p->data.token == TWRITELN || p->data.token == TREAD || p->data.token == TREADLN){
+				if(p->next != NULL && p->next->data.token == TLPAREN){
+					print_space();
+				}
+			}else if(p->next != NULL && !(p->next->data.token == TRSQPAREN || p->next->data.token == TCOMMA)){
+				print_space();
+			}else{
+				print_space();
+			}
         }
 
         /* config next token */
@@ -208,6 +264,21 @@ void print_newline(void){
     }
 	if(semiflag == PTRUE){
 		semiflag = PFALSE;
+	}
+	if(nameflag == PTRUE){
+		nameflag = PFALSE;
+	}
+	if(boolflag == PTRUE){
+		boolflag = PFALSE;
+	}
+	if(numflag == PTRUE){
+		numflag = PFALSE;
+	}
+	if(strflag == PTRUE){
+		strflag = PFALSE;
+	}
+	if(parflag == PTRUE){
+		parflag = PFALSE;
 	}
 }
 

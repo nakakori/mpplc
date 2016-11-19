@@ -246,7 +246,8 @@ void print_token(DATA data){
 void print_indent(void){
     int i;
     for(i=0; i<indent; i++){
-        printf("\t");
+        // printf("\t");
+		printf("    ");
     }
     line = PFALSE;
 }

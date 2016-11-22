@@ -237,7 +237,7 @@ void print_token(DATA data){
     }else if(data.token == TSTRING){
         printf("'%s'", data.str_pointer);
     }else if(data.token == TNUMBER){
-		printf("%d", *(data.num_pointer));
+		printf("%s", data.str_pointer);
 	}else if(data.token != 0){
         printf("%s", token_str[data.token]);
     }

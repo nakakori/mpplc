@@ -413,7 +413,7 @@ static int get_number_token(void){
 		if( (cbuf = get_char()) == EOF ){
 			break;
 		}
-		if( is_newline(cbuf) || is_separator(cbuf) || is_symbol(cbuf) ){
+		if( is_newline(cbuf) || is_separator(cbuf) || is_symbol(cbuf) || is_alphabet(cbuf) ){
 			break;
 		}
 	}
@@ -421,12 +421,6 @@ static int get_number_token(void){
 	if( count >= MAXSTRSIZE ){
 		token_code = ERROR;
 		error("string length is over");
-		return token_code;
-	}
-
-	if( is_alphabet(string_attr[count-1]) == STRUE ){
-		token_code = ERROR;
-		error("syntax error");
 		return token_code;
 	}
 

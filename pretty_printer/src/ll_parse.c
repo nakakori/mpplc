@@ -744,7 +744,7 @@ static int var(){
             return ERROR;
         }
 
-        if(token == TRSQPAREN){
+        if(token != TRSQPAREN){
             create_errmes("']' is not found");
             return error(errmes);
         }
@@ -886,6 +886,7 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
+            break;
         default:
             create_errmes("factor token is not found");
             return error(errmes);
@@ -1027,7 +1028,7 @@ static int input(){
 static int output(){
     init_node();
 
-    if(token != TWHILE && token != TWRITELN){
+    if(token != TWRITE && token != TWRITELN){
         create_errmes("Keyword 'write'/'writeln' is not found");
         return error(errmes);
     }

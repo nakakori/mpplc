@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
 		printf("finish parsing program.\n");
 		return 0;
 	}
+	// parse_program();
 
     pretty_print(synroot);
 
@@ -42,10 +43,10 @@ static pbool line = PFALSE; // PTRUE: need indent, PFALSE: no indent
 static int comp = 0; // compound count
 static int branch = 0; // branch count
 static pbool ifflag = PFALSE;
-// PTRUE: else statement, PFALSE: else if~ or none
 static pbool elseflag = PFALSE;
 static pbool semiflag = PFALSE;
-// static pbool paramflag = PFALSE;
+static pbool procflag = PFALSE;
+static pbool paramflag = PFALSE;
 static pbool nameflag = PFALSE;
 static pbool boolflag = PFALSE;
 static pbool numflag = PFALSE;
@@ -95,7 +96,7 @@ void pretty_print(SYNTAX_TREE *root){
         }
 		/* space */
 		if(nameflag == PTRUE){
-			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA || p->data.token == TSEMI || p->data.token == TCOLON)){
+			if(p->data.token != 0 && !(p->data.token == TLSQPAREN || p->data.token == TRPAREN || p->data.token == TRSQPAREN || p->data.token == TCOMMA || p->data.token == TSEMI || p->data.token == TCOLON)){
 				print_space();
 				nameflag = PFALSE;
 			}
@@ -113,13 +114,13 @@ void pretty_print(SYNTAX_TREE *root){
 			}
 		}
 		if(strflag == PTRUE){
-			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA)){
+			if(p->data.token != 0 && !(p->data.token == TRPAREN || p->data.token == TCOMMA || p->data.token == TSEMI)){
 				print_space();
 				strflag = PFALSE;
 			}
 		}
 		if(parflag == PTRUE){
-			if(p->data.token != 0 && !(p->data.token == TSEMI)){
+			if(p->data.token != 0 && !(p->data.token == TRPAREN ||  p->data.token == TCOMMA ||p->data.token == TSEMI)){
 				print_space();
 				parflag = PFALSE;
 			}
@@ -136,7 +137,11 @@ void pretty_print(SYNTAX_TREE *root){
          * token = "else" and next token != "if"
          */
         if(p->data.token == TSEMI){
-            print_newline();
+            if(paramflag == PFALSE){
+				print_newline();
+			}else{
+				print_space();
+			}
 			semiflag = PTRUE;
         }else if(p->data.token == TBEGIN){
             if(ifflag == PTRUE) indent++;
@@ -152,15 +157,21 @@ void pretty_print(SYNTAX_TREE *root){
 			if(!(p->next->child != NULL && p->next->child->data.token == TIF)){
 				ifflag = PTRUE;
 			}
-		}
-		else if(p->data.token == TELSE){
+		}else if(p->data.token == TELSE){
             if(!(p->next->child != NULL && p->next->child->data.token == TIF)){
                 print_newline();
                 indent++;
                 elseflag = PTRUE;
 				branch--;
             }
-        }
+        }else if(p->data.token == TPROCEDURE){
+			procflag = PTRUE;
+		}else if(p->data.token == TLPAREN && procflag == PTRUE){
+			paramflag = PTRUE;
+			procflag = PFALSE;
+		}else if(p->data.token == TRPAREN && paramflag == PTRUE){
+			paramflag = PFALSE;
+		}
         /*
          * space conditions
          * token = keyword
@@ -199,7 +210,7 @@ void pretty_print(SYNTAX_TREE *root){
 				numflag = PTRUE;
 			}else if(p->data.token == TSTRING){
 				strflag = PTRUE;
-			}else if(p->data.token == TRPAREN){
+			}else if(p->data.token == TRPAREN || p->data.token == TRSQPAREN){
 				parflag = PTRUE;
 			}else if(p->data.token == TWRITE || p->data.token == TWRITELN || p->data.token == TREAD || p->data.token == TREADLN){
 				if(p->next != NULL && p->next->data.token == TLPAREN){
@@ -280,6 +291,9 @@ void print_newline(void){
 	}
 	if(parflag == PTRUE){
 		parflag = PFALSE;
+	}
+	if(procflag == PTRUE){
+		procflag = PFALSE;
 	}
 }
 

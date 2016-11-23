@@ -1,0 +1,4 @@
+
+ ERROR: Line 3: Variable name is not found
+ next token: 3
+finish parsing program.

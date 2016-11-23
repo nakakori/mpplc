@@ -1,0 +1,4 @@
+
+ ERROR: Line 2: invalid error
+ next token: 1
+finish parsing program.

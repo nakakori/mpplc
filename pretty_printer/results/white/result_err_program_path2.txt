@@ -1,0 +1,4 @@
+
+ ERROR: Line 1: Program name is not found
+ next token: 8
+finish parsing program.

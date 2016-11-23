@@ -1,0 +1,4 @@
+
+ ERROR: Line 2: Type keyword('integer', 'boolean', 'char') is not found
+ next token: 1
+finish parsing program.

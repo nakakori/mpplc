@@ -108,7 +108,7 @@ void pretty_print(SYNTAX_TREE *root){
 			}
 		}
 		if(numflag == PTRUE){
-			if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TRSQPAREN || p->data.token == TRPAREN)){
+			if(p->data.token != 0 && !(p->data.token == TCOMMA ||p->data.token == TSEMI || p->data.token == TRSQPAREN || p->data.token == TRPAREN)){
 				print_space();
 				numflag = PFALSE;
 			}
@@ -201,8 +201,8 @@ void pretty_print(SYNTAX_TREE *root){
 			}
 		}
 
-		if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || p->data.token == TINTEGER || p->data.token == TCHAR || p->data.token == TBOOLEAN ||elseflag == PTRUE)){
-			if(p->data.token == TNAME){
+		if(p->data.token != 0 && !(p->data.token == TSEMI || p->data.token == TBEGIN || p->data.token == TDO || p->data.token == TTHEN || p->data.token == TEND || p->data.token == TLPAREN || p->data.token == TLSQPAREN || p->data.token == TINTEGER || p->data.token == TCHAR || p->data.token == TBOOLEAN || elseflag == PTRUE)){
+			if(p->data.token == TNAME || p->data.token == TBREAK || p->data.token == TRETURN){
 				nameflag = PTRUE;
 			}else if(p->data.token == TTRUE || p->data.token == TFALSE){
 				boolflag = PTRUE;
@@ -222,6 +222,10 @@ void pretty_print(SYNTAX_TREE *root){
 				print_space();
 			}
         }
+
+		if(p->data.token != 0 && elseflag == PTRUE){
+			elseflag = PFALSE;
+		}
 
         /* config next token */
         if(p->child != NULL){

@@ -1,0 +1,4 @@
+
+ ERROR: Line 2: ':' is not found
+ next token: 46
+finish parsing program.

@@ -5,5 +5,5 @@ begin
     if ch = 'a' then
         writeln ('It is ''a'' ')
     else
-        writeln('It is not ''a'' ')
+        writeln ('It is not ''a'' ')
 end. 

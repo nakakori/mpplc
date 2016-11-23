@@ -1,0 +1,4 @@
+
+ ERROR: Line 7: ';' is not found
+ next token: 3
+finish parsing program.

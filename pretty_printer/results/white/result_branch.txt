@@ -11,8 +11,8 @@ begin
                 if k < 10 then
                     k := k + 1
                 else
-                    k:=k+j
+                    k := k + j
             end
         else
-            j:=i
+            j := i
 end. 

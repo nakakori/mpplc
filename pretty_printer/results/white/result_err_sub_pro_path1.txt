@@ -1,0 +1,4 @@
+
+ ERROR: Line 2: Keyword 'begin' is not found
+ next token: 1
+finish parsing program.

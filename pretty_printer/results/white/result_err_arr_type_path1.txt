@@ -1,0 +1,4 @@
+
+ ERROR: Line 2: '[' is not found
+ next token: 27
+finish parsing program.

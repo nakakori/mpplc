@@ -27,17 +27,3 @@ for path in ${dir[@]}; do
     ./$bin_path $file > $result_dirpath/${path##${test_dir}/}/$resultfile
   done
 done
-
-# for file in ${test_dir}/*
-# do
-#     mplfile=${file##${test_dir}/}
-#     resultfile=result_${mplfile%.*}.txt
-#     ./$bin_path $file > $result_dirpath/$resultfile
-# done
-#
-# for file in ${test_dir}/*
-# do
-#     mplfile=${file##${test_dir}/}
-#     resultfile=result_${mplfile%.*}.txt
-#     ./$bin_path $file > $result_dirpath/$resultfile
-# done

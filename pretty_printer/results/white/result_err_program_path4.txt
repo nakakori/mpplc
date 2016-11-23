@@ -1,0 +1,4 @@
+
+ ERROR: Line 5: '.' is not found at the end of program
+ next token: -1
+finish parsing program.

@@ -1,0 +1,4 @@
+
+ ERROR: Line 5: ':=' is not found
+ next token: 7
+finish parsing program.

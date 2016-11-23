@@ -1,0 +1,4 @@
+
+ ERROR: Line 7: procedure name is not found
+ next token: 48
+finish parsing program.

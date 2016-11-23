@@ -1,0 +1,4 @@
+
+ ERROR: Line 5: factor token is not found
+ next token: 46
+finish parsing program.

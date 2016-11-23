@@ -702,7 +702,7 @@ static int back(){
     return 0;
 }
 
-/* assign ::= left_hand ":=" exp */
+/* assign ::= var ":=" exp */
 static int assign(){
     init_node();
 

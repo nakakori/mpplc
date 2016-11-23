@@ -57,6 +57,7 @@ void pretty_print(SYNTAX_TREE *root){
     SYNTAX_TREE *p;
     p = root;
 	int branchindent = 0;
+	int loopindent = 0;
 
     while (p != NULL) {
         /* config before print token */
@@ -72,7 +73,9 @@ void pretty_print(SYNTAX_TREE *root){
 			branchindent = indent;
         }else if(p->data.token == TBEGIN){
             indent--;
-        }
+        }else if(p->data.token == TWHILE){
+			loopindent = indent;
+		}
         /*
          * print previous newline conditions
          * token = "end"
@@ -240,6 +243,9 @@ void pretty_print(SYNTAX_TREE *root){
 			if(branchindent > 0){
 				indent = branchindent;
 				ifflag = PFALSE;
+			}
+			if(loopindent > 0){
+				indent = loopindent;
 			}
         }
         p = p->next;

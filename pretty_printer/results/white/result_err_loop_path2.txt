@@ -1,0 +1,4 @@
+
+ ERROR: Line 6: Keyword 'do' is not found
+ next token: 1
+finish parsing program.

@@ -1,0 +1,4 @@
+
+ ERROR: Line 5: Keyword 'then' is not found
+ next token: 1
+finish parsing program.

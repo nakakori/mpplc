@@ -1,5 +1,5 @@
-#ifndef _PRASE_TREE_H_
-#define _PRASE_TREE_H_
+#ifndef _SYNTAX_TREE_H_
+#define _SYNTAX_TREE_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,4 +40,4 @@ extern void register_syntree(int t);
 extern void end_list_node(void);
 extern void release_data(void);
 
-#endif /* _PRASE_TREE_H_ */
+#endif /* _SYNTAX_TREE_H_ */

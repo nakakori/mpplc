@@ -7,7 +7,7 @@
 #include "../../token_count/src/id-list.h"
 
 #include "ll_parse.h"
-#include "parse_tree.h"
+#include "syntax_tree.h"
 
 enum _PBOOL{
     PFALSE = 0,

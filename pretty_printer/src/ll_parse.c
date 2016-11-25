@@ -24,13 +24,13 @@ static int branch();
 static int loop();
 static int escape(); // it might be omitted
 static int call_procedure();
-static int arrange_exp();
+static int arrange_expression();
 static int back(); // it might be omitted
 static int assign();
 // static int left_hand();
 static int var();
-static int exp();
-static int simple_exp();
+static int expression();
+static int simple_expression();
 static int term();
 static int factor();
 static int constant();
@@ -535,7 +535,7 @@ static int statement(){
     return 0;
 }
 
-/* branch ::= "if" exp "then" statement ["else" statement] */
+/* branch ::= "if" expression "then" statement ["else" statement] */
 static int branch(){
     init_node();
 
@@ -546,7 +546,7 @@ static int branch(){
     register_syntree(token);
 
     token = scan();
-    if(exp() == ERROR){
+    if(expression() == ERROR){
         return ERROR;
     }
     if(token != TTHEN){
@@ -573,7 +573,7 @@ static int branch(){
     return 0;
 }
 
-/* loop ::= "while" exp "do" statement */
+/* loop ::= "while" expression "do" statement */
 static int loop(){
     init_node();
     bflag++;
@@ -585,7 +585,7 @@ static int loop(){
     register_syntree(token);
 
     token = scan();
-    if(exp() == ERROR){
+    if(expression() == ERROR){
         return ERROR;
     }
 
@@ -613,7 +613,7 @@ static int escape(){
         create_errmes("Keyword 'break' is not found");
         return error(errmes);
     }
-    /* Keyword 'break' is found, expept for loop statement */
+    /* Keyword 'break' is found, expressionept for loop statement */
     if(bflag == 0){
         create_errmes("'break' is only used loop statement");
         return error(errmes);
@@ -626,7 +626,7 @@ static int escape(){
     return 0;
 }
 
-/* call_procedure ::= "call" procedure_name ["(" arrange_exp ")"] */
+/* call_procedure ::= "call" procedure_name ["(" arrange_expression ")"] */
 static int call_procedure(){
     init_node();
 
@@ -648,7 +648,7 @@ static int call_procedure(){
         register_syntree(token);
 
         token = scan();
-        if(arrange_exp() == ERROR){
+        if(arrange_expression() == ERROR){
             return ERROR;
         }
 
@@ -665,11 +665,11 @@ static int call_procedure(){
     return 0;
 }
 
-/* arrange_exp ::= exp {"," exp} */
-static int arrange_exp(){
+/* arrange_expression ::= expression {"," expression} */
+static int arrange_expression(){
     init_node();
     /* may be able to write do-while */
-    if(exp() == ERROR){
+    if(expression() == ERROR){
         return ERROR;
     }
 
@@ -677,7 +677,7 @@ static int arrange_exp(){
         register_syntree(token);
 
         token = scan();
-        if(exp() == ERROR){
+        if(expression() == ERROR){
             return ERROR;
         }
     }
@@ -702,7 +702,7 @@ static int back(){
     return 0;
 }
 
-/* assign ::= var ":=" exp */
+/* assign ::= var ":=" expression */
 static int assign(){
     init_node();
 
@@ -717,7 +717,7 @@ static int assign(){
     register_syntree(token);
 
     token = scan();
-    if(exp() == ERROR){
+    if(expression() == ERROR){
         return ERROR;
     }
 
@@ -725,7 +725,7 @@ static int assign(){
     return 0;
 }
 
-/* var ::= var_name ["[" exp "]"] */
+/* var ::= var_name ["[" expression "]"] */
 static int var(){
     init_node();
 
@@ -740,7 +740,7 @@ static int var(){
         register_syntree(token);
 
         token = scan();
-        if(exp() == ERROR){
+        if(expression() == ERROR){
             return ERROR;
         }
 
@@ -757,18 +757,18 @@ static int var(){
     return 0;
 }
 
-/* exp ::= simple_exp {relatinal_operator simple_exp} */
-static int exp(){
+/* expression ::= simple_expression {relatinal_operator simple_expression} */
+static int expression(){
     init_node();
 
-    if(simple_exp() == ERROR){
+    if(simple_expression() == ERROR){
         return ERROR;
     }
     while (token == TEQUAL || token == TNOTEQ || token == TLE || token == TLEEQ || token == TGR || token == TGREQ) {
         if(relatinal_operator() == ERROR){
             return ERROR;
         }
-        if(simple_exp() == ERROR){
+        if(simple_expression() == ERROR){
             return ERROR;
         }
     }
@@ -776,8 +776,8 @@ static int exp(){
     return 0;
 }
 
-/* simple_exp ::= ["+"|"-"] term {add_operator term} */
-static int simple_exp(){
+/* simple_expression ::= ["+"|"-"] term {add_operator term} */
+static int simple_expression(){
     init_node();
 
     if(token == TPLUS || token == TMINUS){
@@ -821,7 +821,7 @@ static int term(){
     return 0;
 }
 
-/* factor ::= var | constant | "(" exp ")" | "not" factor | standard_type "(" exp ")" */
+/* factor ::= var | constant | "(" expression ")" | "not" factor | standard_type "(" expression ")" */
 static int factor(){
     //init_node();
 
@@ -843,7 +843,7 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
-            if(exp() == ERROR){
+            if(expression() == ERROR){
                 return ERROR;
             }
             if(token != TRPAREN){
@@ -875,7 +875,7 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
-            if(exp() == ERROR){
+            if(expression() == ERROR){
                 return ERROR;
             }
 
@@ -1065,12 +1065,12 @@ static int output(){
     return 0;
 }
 
-/* output_spec ::= exp [":" "NUMBER"] | "STRING" */
+/* output_spec ::= expression [":" "NUMBER"] | "STRING" */
 static int output_spec(){
     init_node();
 
     if(token == TPLUS || token == TMINUS || token == TNAME || token == TNUMBER || token == TFALSE || token == TTRUE || (token == TSTRING && length == 1) || token == TLPAREN || token == TNOT || token == TINTEGER || token == TBOOLEAN || token == TCHAR){
-        if(exp() == ERROR){
+        if(expression() == ERROR){
             return ERROR;
         }
 

@@ -1,4 +1,4 @@
-#include "parse_tree.h"
+#include "syntax_tree.h"
 
 SYNTAX_TREE *synroot; /* root of syntax tree */
 static SYNTAX_TREE **curroot; /* current root */

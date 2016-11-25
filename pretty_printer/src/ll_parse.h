@@ -9,7 +9,7 @@
 #include "../../token_count/src/token-list.h"
 #include "../../token_count/src/scan.h"
 
-#include "parse_tree.h"
+#include "syntax_tree.h"
 
 // #define PRINT_DEBUG
 

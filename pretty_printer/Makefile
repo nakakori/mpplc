@@ -54,4 +54,4 @@ ${TCOBJDIR}/%.o: ${TCSRCDIR}/%.c
 	${CC} ${CFLAGS} -o $@ -c $<
 
 clean:
-	${RM} ${OBJECTS} ${TARGET}
+	${RM} ${OBJECTS} ${TCOBJCTS} ${TARGET}

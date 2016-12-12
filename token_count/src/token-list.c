@@ -50,48 +50,48 @@ char *tokenstr[NUMOFTOKEN+1] = {
 	";         ", "read      ","write      ", "break     "
 };
 
-int tc_main(int nc, char *np[]) {
-	#ifdef TEST
-	/* start test */
-	test_main();
-	return 0;
-	#endif
-
-	int token, i;
-
-	if (nc < 2) {
-		printf("File name id not given.\n");
-		return 0;
-	}
-	if (init_scan(np[1]) < 0) {
-		printf("File %s can not open.\n", np[1]);
-		return 0;
-	}
-
-	/* initialize token counter */
-	for ( i=0; i < NUMOFTOKEN+1; i++ ){
-		numtoken[i] = 0;
-	}
-
-	/* each token count up */
-	while ((token = scan()) >= 0) {
-		numtoken[token]++;
-		if( token == TNAME ) id_countup(string_attr);
-	}
-	end_scan();
-
-	/* output token counter */
-	for ( i=1; i < NUMOFTOKEN+1; i++ ){
-		if(numtoken[i] != 0){
-			printf("\"%s\"\t%d\n", tokenstr[i], numtoken[i]);
-			if( i == TNAME ) print_idtab();
-		}
-	}
-	printf("Line count:\t%d\n", get_linenum());
-
-	release_idtab();
-	return 0;
-}
+// int tc_main(int nc, char *np[]) {
+// 	#ifdef TEST
+// 	/* start test */
+// 	test_main();
+// 	return 0;
+// 	#endif
+//
+// 	int token, i;
+//
+// 	if (nc < 2) {
+// 		printf("File name id not given.\n");
+// 		return 0;
+// 	}
+// 	if (init_scan(np[1]) < 0) {
+// 		printf("File %s can not open.\n", np[1]);
+// 		return 0;
+// 	}
+//
+// 	/* initialize token counter */
+// 	for ( i=0; i < NUMOFTOKEN+1; i++ ){
+// 		numtoken[i] = 0;
+// 	}
+//
+// 	/* each token count up */
+// 	while ((token = scan()) >= 0) {
+// 		numtoken[token]++;
+// 		if( token == TNAME ) id_countup(string_attr);
+// 	}
+// 	end_scan();
+//
+// 	/* output token counter */
+// 	for ( i=1; i < NUMOFTOKEN+1; i++ ){
+// 		if(numtoken[i] != 0){
+// 			printf("\"%s\"\t%d\n", tokenstr[i], numtoken[i]);
+// 			if( i == TNAME ) print_idtab();
+// 		}
+// 	}
+// 	printf("Line count:\t%d\n", get_linenum());
+//
+// 	release_idtab();
+// 	return 0;
+// }
 
 int error(char *mes) {
 	printf("\n ERROR: %s\n", mes);

@@ -5,8 +5,9 @@
 static int token;
 static char errmes[MAXSTRSIZE];
 static int bflag; // break flag (more 1: in loop, 0: not in loop)
+static int pflag; // parameter flag (1: paramter, 0: not parameter)
 
-static void create_errmes(char *mes);
+static char *type_str[] = {"", "integer", "char", "boolean"};
 
 static int block();
 static int var_declare();
@@ -54,9 +55,11 @@ extern int init_ll_parse(char *filename){
     }
 
     init_syntree();
+    init_symtab();
 
     token = scan();
     bflag = 0;
+    pflag = 0;
 
     return 0;
 }
@@ -68,7 +71,7 @@ extern void end_ll_parse(void){
 }
 
 /* create error message */
-static void create_errmes(char *mes){
+void create_errmes(char *mes){
     sprintf(errmes, "Line %d: %s\n next token: %d", get_linenum(), mes, token);
 }
 
@@ -121,6 +124,7 @@ static int block(){
     init_node();
 
     while(token == TVAR || token == TPROCEDURE){
+        switch_scope(GLOBAL);
         switch (token) {
             case TVAR:
                 if(var_declare() == ERROR){
@@ -137,17 +141,20 @@ static int block(){
         }
     }
 
+    switch_scope(GLOBAL);
     if(compound() == ERROR){
         return ERROR;
     }
 
     end_list_node();
+    end_scope(GLOBAL);
     return 0;
 }
 
 /* var_declare ::= "var" arrange_var ":" type ";" {arrange_var ":" type ";"} */
 static int var_declare(){
     init_node();
+    switch_varorpara(VARIABLE);
 
     if(token != TVAR){
         create_errmes("Keyword 'var' is not found");
@@ -213,6 +220,9 @@ static int arrange_var(){
         return error(errmes);
     }
     register_syntree(token);
+    if(register_symtab(string_attr) == ERROR){
+        return error(errmes);
+    }
 
     token = scan();
     while(token == TCOMMA){
@@ -224,6 +234,9 @@ static int arrange_var(){
             return error(errmes);
         }
         register_syntree(token);
+        if(register_symtab(string_attr) == ERROR){
+            return error(errmes);
+        }
 
         token = scan();
     }
@@ -234,20 +247,22 @@ static int arrange_var(){
 
 /* type ::= standard_type | array_type */
 static int type(){
-    //init_node();
+    int type;
+    int arraysize = 0;
 
     switch (token) {
         case TINTEGER:
         case TBOOLEAN:
         case TCHAR:
-            if(standard_type() == ERROR){
+            if((type = standard_type()) == ERROR){
                 return ERROR;
             }
             break;
         case TARRAY:
-            if(array_type() == ERROR){
+            if((type = array_type()) == ERROR){
                 return ERROR;
             }
+            arraysize = num_attr;
             break;
         default:
             create_errmes("Type keyword('integer', 'boolean', 'char', 'array') is not found");
@@ -255,18 +270,25 @@ static int type(){
             break;
     }
 
-    //end_list_node();
+    register_type(type, arraysize);
     return 0;
 }
 
 /* standard_type ::= "integer" | "boolean" | "char" */
 static int standard_type(){
-    //init_node();
+    int type = 0;
 
     switch (token) {
         case TINTEGER:
+            type = TPINT;
+            register_syntree(token);
+            break;
         case TBOOLEAN:
+            type = TPBOOL;
+            register_syntree(token);
+            break;
         case TCHAR:
+            type = TPCHAR;
             register_syntree(token);
             break;
         default:
@@ -277,12 +299,18 @@ static int standard_type(){
     token = scan();
 
     //end_list_node();
-    return 0;
+    return type;
 }
 
 /* array_type ::= "array" "[" "NUMBER" "]" "of" standard_type */
 static int array_type(){
+    int type;
     init_node();
+
+    if(pflag != 0){
+        create_errmes("can not use an array type as a formal parameter type");
+        return error(errmes);
+    }
 
     if(token != TARRAY){
         create_errmes("Keyword 'array' is not found");
@@ -302,6 +330,10 @@ static int array_type(){
         create_errmes("invalid error");
         return error(errmes);
     }
+    if(num_attr == 0){
+        create_errmes("array size is 1 or more");
+        return error(errmes);
+    }
     register_syntree(token);
 
     token = scan();
@@ -319,12 +351,12 @@ static int array_type(){
     register_syntree(token);
 
     token = scan();
-    if(standard_type() == ERROR){
+    if((type = standard_type()) == ERROR){
         return ERROR;
     }
 
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* sub_program ::= "procedure" procedure_name [parameter] ";" [var_declare] compound ";" */
@@ -343,7 +375,11 @@ static int sub_program(){
         return error(errmes);
     }
     register_syntree(token);
+    if(register_subpro(string_attr) == ERROR){
+        return error(errmes);
+    }
 
+    switch_scope(LOCAL);
     token = scan();
     if(token == TLPAREN){
         if(parameter() == ERROR){
@@ -377,12 +413,15 @@ static int sub_program(){
     token = scan();
 
     end_list_node();
+    end_scope(LOCAL);
     return 0;
 }
 
 /* parameter ::= "(" arrange_var ":" type {";" arrange_var ":" type} ")" */
 static int parameter(){
     init_node();
+    switch_varorpara(PARAMETER);
+    pflag = 1;
 
     if(token != TLPAREN){
         create_errmes("'(' is not found");
@@ -434,6 +473,8 @@ static int parameter(){
 
     token = scan();
 
+    pflag = 0;
+    register_param();
     end_list_node();
     return 0;
 }
@@ -537,6 +578,7 @@ static int statement(){
 
 /* branch ::= "if" expression "then" statement ["else" statement] */
 static int branch(){
+    int type;
     init_node();
 
     if(token != TIF){
@@ -546,9 +588,14 @@ static int branch(){
     register_syntree(token);
 
     token = scan();
-    if(expression() == ERROR){
+    if((type = expression()) == ERROR){
         return ERROR;
     }
+    if(type != TPBOOL){
+        create_errmes("expression is not boolean type");
+        return error(errmes);
+    }
+
     if(token != TTHEN){
         create_errmes("Keyword 'then' is not found");
         return error(errmes);
@@ -575,6 +622,7 @@ static int branch(){
 
 /* loop ::= "while" expression "do" statement */
 static int loop(){
+    int type;
     init_node();
     bflag++;
 
@@ -585,8 +633,12 @@ static int loop(){
     register_syntree(token);
 
     token = scan();
-    if(expression() == ERROR){
+    if((type = expression()) == ERROR){
         return ERROR;
+    }
+    if(type != TPBOOL){
+        create_errmes("expression is not boolean type");
+        return error(errmes);
     }
 
     if(token != TDO){
@@ -628,6 +680,7 @@ static int escape(){
 
 /* call_procedure ::= "call" procedure_name ["(" arrange_expression ")"] */
 static int call_procedure(){
+    int count, para;
     init_node();
 
     if(token != TCALL){
@@ -642,14 +695,26 @@ static int call_procedure(){
         return error(errmes);
     }
     register_syntree(token);
+    if((count = reference_subpro(string_attr)) == ERROR){
+        return error(errmes);
+    }
 
     token = scan();
     if(token == TLPAREN){
         register_syntree(token);
 
         token = scan();
-        if(arrange_expression() == ERROR){
+        if((para = arrange_expression()) == ERROR){
             return ERROR;
+        }
+
+        if(count != para){
+            if(count > para){
+                create_errmes("formal parameter is too much");
+            }else{
+                create_errmes("formal parameter is too less");
+            }
+            return error(errmes);
         }
 
         if(token != TRPAREN){
@@ -667,23 +732,39 @@ static int call_procedure(){
 
 /* arrange_expression ::= expression {"," expression} */
 static int arrange_expression(){
+    int type;
+    int count = 0;
     init_node();
     /* may be able to write do-while */
-    if(expression() == ERROR){
+    if((type = expression()) == ERROR){
         return ERROR;
+    }
+    count++;
+    if(type != param_type(count)){
+        char buf[MAXSTRSIZE];
+        sprintf(buf, "the %d paramter dont much type", count);
+        create_errmes(buf);
+        return error(errmes);
     }
 
     while (token == TCOMMA) {
         register_syntree(token);
 
         token = scan();
-        if(expression() == ERROR){
+        if((type = expression()) == ERROR){
             return ERROR;
+        }
+        count++;
+        if(type != param_type(count)){
+            char buf[MAXSTRSIZE];
+            sprintf(buf, "the %d paramter dont much type", count);
+            create_errmes(buf);
+            return error(errmes);
         }
     }
 
     end_list_node();
-    return 0;
+    return count;
 }
 
 /* back ::= "return" */
@@ -704,10 +785,15 @@ static int back(){
 
 /* assign ::= var ":=" expression */
 static int assign(){
+    int ltype, rtype;
     init_node();
 
-    if(var() == ERROR){ // left_hand is only var
+    if((ltype = var()) == ERROR){ // left_hand is only var
         return ERROR;
+    }
+    if(ltype == TPARRAY){
+        create_errmes("can not assign to array type");
+        return error(errmes);
     }
 
     if(token != TASSIGN){
@@ -717,8 +803,19 @@ static int assign(){
     register_syntree(token);
 
     token = scan();
-    if(expression() == ERROR){
+    if((rtype = expression()) == ERROR){
         return ERROR;
+    }
+    if(rtype == TPARRAY){
+        create_errmes("can not assign from array type");
+        return error(errmes);
+    }
+
+    if(ltype != rtype){
+        char buf[MAXSTRSIZE];
+        sprintf("dont allow to assign to '%s' from '%s'", type_str[ltype], type_str[rtype]);
+        create_errmes(buf);
+        return error(errmes);
     }
 
     end_list_node();
@@ -727,6 +824,7 @@ static int assign(){
 
 /* var ::= var_name ["[" expression "]"] */
 static int var(){
+    int type, etype;
     init_node();
 
     if(token != TNAME){
@@ -734,14 +832,28 @@ static int var(){
         return error(errmes);
     }
     register_syntree(token);
+    if((type = reference_name(string_attr)) == ERROR){
+        return error(errmes);
+    }
 
     token = scan();
     if(token == TLSQPAREN){
+        int vtype = get_array_element_type(string_attr);
+        if(type != TPARRAY){
+            char buf[MAXSTRSIZE];
+            sprintf(buf, "%s is not array type", string_attr);
+            create_errmes(buf);
+            return error(errmes);
+        }
         register_syntree(token);
 
         token = scan();
-        if(expression() == ERROR){
+        if((etype = expression()) == ERROR){
             return ERROR;
+        }
+        if(etype != TPINT){
+            create_errmes("array subscript is not an integer");
+            return error(errmes);
         }
 
         if(token != TRSQPAREN){
@@ -751,83 +863,134 @@ static int var(){
         register_syntree(token);
 
         token = scan();
+
+        type = vtype;
     }
 
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* expression ::= simple_expression {relatinal_operator simple_expression} */
 static int expression(){
+    int type, ltype, rtype;
+
     init_node();
 
-    if(simple_expression() == ERROR){
+    if((type = simple_expression()) == ERROR){
         return ERROR;
     }
+    ltype = type;
+
     while (token == TEQUAL || token == TNOTEQ || token == TLE || token == TLEEQ || token == TGR || token == TGREQ) {
-        if(relatinal_operator() == ERROR){
+        if((type = relatinal_operator()) == ERROR){
             return ERROR;
         }
-        if(simple_expression() == ERROR){
+        if((rtype = simple_expression()) == ERROR){
             return ERROR;
+        }
+        if(ltype != rtype){
+            char buf[MAXSTRSIZE];
+            sprintf(buf, "can not compare '%s' and '%s'", type_str[ltype], type_str[rtype]);
+            create_errmes(buf);
+            return error(errmes);
+        }
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
     }
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* simple_expression ::= ["+"|"-"] term {add_operator term} */
 static int simple_expression(){
+    int type, ltype, rtype;
+    sbool flag = SFALSE;
+
     init_node();
 
     if(token == TPLUS || token == TMINUS){
         register_syntree(token);
-
+        flag = STRUE;
         token = scan();
     }
-    if(term() == ERROR){
+    if((type = term()) == ERROR){
         return ERROR;
     }
+    if(flag == STRUE && type != TPINT){
+        char buf[MAXSTRSIZE];
+        sprintf(buf, "dont allow '%s' operand after '+'/'-'", type_str[type]);
+        create_errmes(buf);
+        return error(errmes);
+    }
+    ltype = type;
+
     while (token == TPLUS || token == TMINUS || token == TOR) {
-        if(add_operator() == ERROR){
+        if((type = add_operator()) == ERROR){
             return ERROR;
         }
-        if(term() == ERROR){
+        if((rtype = term()) == ERROR){
             return ERROR;
+        }
+        if(type != ltype || type != rtype || ltype != rtype){
+            char buf[MAXSTRSIZE];
+            sprintf(buf, "can not add '%s' and '%s'", type_str[ltype], type_str[rtype]);
+            create_errmes(buf);
+            return error(errmes);
+        }
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
     }
 
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* term ::= factor {multi_operator factor} */
 static int term(){
+    int type, ltype, rtype;
+
     init_node();
 
-    if(factor() == ERROR){
+    if((type = factor()) == ERROR){
         return ERROR;
     }
+    ltype = type;
+
     while (token == TSTAR || token == TDIV || token == TAND) {
-        if(multi_operator() == ERROR){
+        if((type = multi_operator()) == ERROR){
             return ERROR;
         }
-        if(factor() == ERROR){
+        if((rtype = factor()) == ERROR){
             return ERROR;
+        }
+        if(type != ltype || type != rtype || ltype != rtype){
+            char buf[MAXSTRSIZE];
+            sprintf(buf, "can not %s multiple '%s' and '%s'", type_str[type], type_str[ltype], type_str[rtype]);
+            create_errmes(buf);
+            return error(errmes);
+        }
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
     }
 
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* factor ::= var | constant | "(" expression ")" | "not" factor | standard_type "(" expression ")" */
 static int factor(){
-    //init_node();
+    int type;
 
     switch (token) {
         case TNAME:
-            if(var() == ERROR){
+            if((type =var()) == ERROR){
                 return ERROR;
             }
             break;
@@ -835,7 +998,7 @@ static int factor(){
         case TTRUE:
         case TFALSE:
         case TSTRING:
-            if(constant() == ERROR){
+            if((type = constant()) == ERROR){
                 return ERROR;
             }
             break;
@@ -843,7 +1006,7 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
-            if(expression() == ERROR){
+            if((type = expression()) == ERROR){
                 return ERROR;
             }
             if(token != TRPAREN){
@@ -858,13 +1021,24 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
-            if(factor() == ERROR){
+            if((type = factor()) == ERROR){
                 return ERROR;
+            }
+            if(type != TPBOOL){
+                create_errmes("boolean please");
+                return error(errmes);
             }
             break;
         case TINTEGER:
         case TBOOLEAN:
         case TCHAR:
+            if(token == TINTEGER){
+                type = TPINT;
+            }else if(token == TBOOLEAN){
+                type = TPBOOL;
+            }else{
+                type = TPCHAR;
+            }
             register_syntree(token);
 
             token = scan();
@@ -874,9 +1048,14 @@ static int factor(){
             }
             register_syntree(token);
 
+            int etype;
             token = scan();
-            if(expression() == ERROR){
+            if((etype = expression()) == ERROR){
                 return ERROR;
+            }
+            if(etype == TPARRAY){
+                create_errmes("");
+                return error(errmes);
             }
 
             if(token != TRPAREN){
@@ -893,77 +1072,89 @@ static int factor(){
             break;
     }
 
-    //end_list_node();
-    return 0;
+    return type;
 }
 
 /* constant ::= "NUMBER" | "false" | "true" | "STRING" */
 static int constant(){
-    //init_node();
+    int type;
 
     switch (token) {
         case TNUMBER:
+            type = TPINT;
+            break;
         case TFALSE:
         case TTRUE:
+            type = TPBOOL;
+            break;
         case TSTRING:
-            register_syntree(token);
+            if(length != 1){
+                char buf[MAXSTRSIZE];
+                sprintf(buf, "length of constant string is 1. %s's length is %d", string_attr, length);
+                create_errmes(buf);
+                return error(errmes);
+            }
+            type = TPCHAR;
             break;
         default:
             create_errmes("constant word is not found");
             return error(errmes);
-            break;
     }
+    register_syntree(token);
     token = scan();
 
     //end_list_node();
-    return 0;
+    return type;
 }
 
 /* multi_operator ::= "*" |"div" | "and" */
-static int multi_operator(){ // it might be omitted
-    //init_node();
+static int multi_operator(){
+    int type;
+
     switch (token) {
         case TSTAR:
         case TDIV:
+            type = TPINT;
+            break;
         case TAND:
-            register_syntree(token);
+            type = TPBOOL;
             break;
         default:
             create_errmes("multi operator is not found");
             return error(errmes);
             break;
     }
+    register_syntree(token);
     token = scan();
 
-    //end_list_node();
-    return 0;
+    return type;
 }
 
 /* add_operator ::= "+" | "-" | "or" */
-static int add_operator(){ // it might be omitted
-    //init_node();
+static int add_operator(){
+    int type;
 
     switch (token) {
         case TPLUS:
         case TMINUS:
+            type = TPINT;
+            break;
         case TOR:
-            register_syntree(token);
+            type = TPBOOL;
             break;
         default:
             create_errmes("add operator is not found");
             return error(errmes);
             break;
     }
+    register_syntree(token);
     token = scan();
 
-    //end_list_node();
-    return 0;
+    return type;
 }
 
 /* relatinal_operator ::= "=" | "<>" | "<" | "<=" | ">" | ">=" */
-static int relatinal_operator(){ // it might be omitted
-    //init_node();
-
+static int relatinal_operator(){
     switch (token) {
         case TEQUAL:
         case TNOTEQ:
@@ -980,12 +1171,12 @@ static int relatinal_operator(){ // it might be omitted
     }
     token = scan();
 
-    //end_list_node();
-    return 0;
+    return TPBOOL;
 }
 
 /* input ::= ("read" | "readln") ["(" var {"," var} ")"] */
 static int input(){
+    int type;
     init_node();
 
     if(token != TREAD && token != TREADLN){
@@ -999,16 +1190,24 @@ static int input(){
         register_syntree(token);
 
         token = scan();
-        if(var() == ERROR){
+        if((type = var()) == ERROR){
             return ERROR;
+        }
+        if(!(type == TPINT || type == TPCHAR)){
+            create_errmes("");
+            return error(errmes);
         }
 
         while(token == TCOMMA){
             register_syntree(token);
 
             token = scan();
-            if(var() == ERROR){
+            if((type = var()) == ERROR){
                 return ERROR;
+            }
+            if(!(type == TPINT || type == TPCHAR)){
+                create_errmes("");
+                return error(errmes);
             }
         }
         if(token != TRPAREN){
@@ -1067,11 +1266,16 @@ static int output(){
 
 /* output_spec ::= expression [":" "NUMBER"] | "STRING" */
 static int output_spec(){
+    int type;
     init_node();
 
     if(token == TPLUS || token == TMINUS || token == TNAME || token == TNUMBER || token == TFALSE || token == TTRUE || (token == TSTRING && length == 1) || token == TLPAREN || token == TNOT || token == TINTEGER || token == TBOOLEAN || token == TCHAR){
-        if(expression() == ERROR){
+        if((type = expression()) == ERROR){
             return ERROR;
+        }
+        if(type == TPARRAY){
+            create_errmes("");
+            return error(errmes);
         }
 
         if(token == TCOLON){
@@ -1089,6 +1293,10 @@ static int output_spec(){
     }else{
         if(token != TSTRING){
             create_errmes("invalid syntax: missing string");
+            return error(errmes);
+        }
+        if(!(length == 0 || length >= 2)){
+            create_errmes("string length 0 or 2 or more");
             return error(errmes);
         }
         register_syntree(token);

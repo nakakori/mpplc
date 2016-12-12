@@ -8,6 +8,6 @@ program sample28p;
         writeln ('Everyone!')
     end;
 begin
-    call p;
+    call p();
     call q
-end. 
+end.

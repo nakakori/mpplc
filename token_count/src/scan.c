@@ -357,6 +357,7 @@ static sbool is_comment(int c){
 
 static void init_string_attr(void){
 	int i;
+	length = 0;
 	for( i=0; i < MAXSTRSIZE; i++){
 		string_attr[i] = '\0';
 	}
@@ -539,6 +540,7 @@ static int get_string_token(void){
 		if( flag == STRUE ){ /* Maybe string finish */
 			if( cbuf != '\'' ){
 				string_attr[--count] = '\0';
+				length--;
 				break; /* string finish */
 			}else{ /* cbuf is ' */
 				flag = SFALSE;
@@ -547,6 +549,7 @@ static int get_string_token(void){
 					error("missing terminating '\'' character.");
 					return ERROR;
 				}
+				length--;
 				continue;
 			}
 		}

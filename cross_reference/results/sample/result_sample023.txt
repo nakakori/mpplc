@@ -1,0 +1,3 @@
+
+ ERROR: Line 2: Keyword 'begin' is not found
+ next token: 46

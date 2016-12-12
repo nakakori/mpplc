@@ -147,7 +147,9 @@ void pretty_print(SYNTAX_TREE *root){
 			}
 			semiflag = PTRUE;
         }else if(p->data.token == TBEGIN){
-            if(ifflag == PTRUE) indent++;
+            if(ifflag == PTRUE){
+				indent++;
+			}
             print_newline();
             comp++;
             indent++;

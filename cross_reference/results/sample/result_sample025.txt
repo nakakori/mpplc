@@ -1,0 +1,3 @@
+
+ ERROR: Line 6: Keyword 'end' is not found
+ next token: 10

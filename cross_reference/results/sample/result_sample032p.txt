@@ -1,0 +1,3 @@
+
+ ERROR: Line 2: dont allow recursive call
+ next token: 1

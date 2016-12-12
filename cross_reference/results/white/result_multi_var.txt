@@ -1,0 +1,3 @@
+
+ ERROR: Line 4: a is multi definition
+ next token: 1

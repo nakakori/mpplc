@@ -8,19 +8,20 @@ static void release_syntree(SYNTAX_TREE *root);
 static int *num_alloc();
 static char *str_alloc();
 
-/* ********************************
+/*
  * initilize syntax tree
  * this function call only one time
- * ******************************** */
+ */
 void init_syntree(void){
-    init_idtab();
+    // init_idtab();
+    init_symtab();
     synroot = NULL;
     curroot = &synroot;
 }
-/* *********************************************
+/*
  * initilize syntax tree node
  * this function call every analysis processing
- * ********************************************* */
+ */
 void init_node(void){
     SYNTAX_TREE *p;
 
@@ -46,8 +47,9 @@ void register_syntree(int t){
     // printf("malloc :%d token\n", t);
     (p->data).token = t;
     if(t == TNAME){
-        id_countup(string_attr);
-        p->data.id_pointer = search_idtab(string_attr);
+        // id_countup(string_attr);
+        // p->data.id_pointer = search_idtab(string_attr);
+        p->data.id_pointer = NULL;
         p->data.num_pointer = NULL;
         p->data.str_pointer = NULL;
     }else if(t == TNUMBER){
@@ -85,11 +87,11 @@ void end_list_node(void){
     search_curlist(synroot);
 }
 
-/* ******************************************
+/*
  * this function is searched one list
  * return value: SET, FOUND, NOTFOUND
  * argument: root(pointer) to be searched list
- * ******************************************* */
+ */
 
 sresult search_curlist(SYNTAX_TREE *root){
     SYNTAX_TREE *p;
@@ -124,7 +126,8 @@ sresult search_curlist(SYNTAX_TREE *root){
 }
 
 void release_data(void){
-    release_idtab();
+    // release_idtab();
+    release_symtab();
     release_syntree(synroot);
 }
 

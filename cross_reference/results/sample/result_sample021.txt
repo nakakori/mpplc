@@ -1,0 +1,3 @@
+
+ ERROR: Line 2: ';' is not found
+ next token: 3

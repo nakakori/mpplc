@@ -1,0 +1,3 @@
+Name	Type	Def.  Ref.
+x	char	2 | 4
+y	char	2 | 4

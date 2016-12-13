@@ -31,6 +31,12 @@ int main(int argc, char *argv[]) {
 void print_reference(char *var, ID **table){
     ID *id = table[get_hash(var)];
     if(id != NULL){
+        while(id != NULL){
+            if(strcmp(var, id->name) == 0){
+                break;
+            }
+            id = id->nextp;
+        }
         printf("%s", id->name); // print name
 
         if(id->procname != NULL){ // print procdure name
@@ -122,7 +128,6 @@ struct NAME_LIST *make_namelist(void){
                     while(id != NULL){
                         p[i].name = id->name;
                         p[i].proc = id->procname;
-                        printf("%s:%s\n", p[i].name, p[i].proc);
                         i++;
                         id = id->nextp;
                     }

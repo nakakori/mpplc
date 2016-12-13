@@ -1,3 +1,4 @@
-
- ERROR: Line 5: the 1 paramter dont much type
- next token: 39
+Name	Type	Def.  Ref.
+a	integer	4 | 
+p	procedure	2 | 5
+q	procedure	3 | 5

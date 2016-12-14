@@ -66,7 +66,8 @@ extern int init_ll_parse(char *filename){
 
 /* end LL parse */
 extern void end_ll_parse(void){
-    release_data();
+    release_data(); // release syntax tree
+    release_symtab(); // release symbol table
     end_scan();
 }
 
@@ -219,10 +220,10 @@ static int arrange_var(){
         create_errmes("Variable name is not found");
         return error(errmes);
     }
-    register_syntree(token);
     if(register_symtab(string_attr) == ERROR){
         return error(errmes);
     }
+    register_syntree(token);
 
     token = scan();
     while(token == TCOMMA){
@@ -233,10 +234,10 @@ static int arrange_var(){
             create_errmes("Variable name is not found");
             return error(errmes);
         }
-        register_syntree(token);
         if(register_symtab(string_attr) == ERROR){
             return error(errmes);
         }
+        register_syntree(token);
 
         token = scan();
     }

@@ -7,12 +7,13 @@
 
 #include "ll_parse.h"
 #include "../../token_count/src/scan.h"
-#include "../../token_count/src/id-list.h"
+#include "../../cross_reference/src/symbol_table.h"
+// #include "../../token_count/src/id-list.h"
 
 
 struct _DATA {
     int token;
-    struct ID *id_pointer;
+    ID *id_pointer;
     int *num_pointer;
     char *str_pointer;
 };

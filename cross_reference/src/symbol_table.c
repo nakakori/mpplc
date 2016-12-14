@@ -1,5 +1,8 @@
 #include "symbol_table.h"
 
+#include "../../pretty_printer/src/ll_parse.h"
+#include "../../token_count/src/scan.h"
+
 SYM_LIST *table_list;
 int namecount;
 
@@ -9,6 +12,9 @@ static int varorpara;
 static UNDEFINE_LIST *undef_list, *param_list;
 static int undefcount;
 static ID *subpro, *call_subpro;
+
+static void release_type(struct TYPE *tp);
+static void release_line(struct LINE *lp);
 
 static ID **create_hash_table(void);
 static void set_hash_table(ID *newid);
@@ -34,7 +40,45 @@ void init_symtab(void){
 }
 
 void release_symtab(void){
+    int i;
+    while(table_list != NULL){ // release symbol table list
+        ID **table = table_list->tablep;
+        for(i = 0; i < HASHSIZE; i++){ // release symbol table
+            if(table[i] != NULL){
+                free(table[i]->name);
+                if(table[i]->procname){
+                    free(table[i]);
+                }
+                release_type(table[i]->itype);
+                release_line(table[i]->irefp);
+                free(table[i]);
+            }
+        }
+        SYM_LIST *tmp = table_list;
+        table_list = table_list->nextp;
+        if(tmp->procname != NULL){
+            free(tmp->procname);
+        }
+        free(tmp);
+    }
+}
 
+void release_type(struct TYPE *tp){
+    struct TYPE *tmp;
+    while(tp != NULL){
+        tmp = tp;
+        tp = tp->elmtp;
+        free(tmp);
+    }
+}
+
+void release_line(struct LINE *lp){
+    struct LINE *tmp;
+    while(lp != NULL){
+        tmp = lp;
+        lp = lp->nextlinep;
+        free(tmp);
+    }
 }
 
 void switch_scope(int s){
@@ -120,7 +164,6 @@ int register_symtab(char *np){
 
     p->name = str_alloc(np);
     if(scope == LOCAL){
-        // p->procname = subpro_name; // better?
         p->procname = str_alloc(subpro->name);
     }else { // scope == GLOBAL
         p->procname = NULL;
@@ -279,7 +322,7 @@ int get_hash(char *str){
     int length = strlen(str);
 
     for (i = 0; i < length; i++) {
-        h = h * 37 + str[i];
+        h = h + str[i];
     }
     h = h % HASHSIZE;
     return h;

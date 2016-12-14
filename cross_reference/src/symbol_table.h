@@ -1,8 +1,8 @@
 #ifndef _SYMBOL_TABLE_H_
 #define _SYMBOL_TABLE_H_
 
-#include "../../pretty_printer/src/ll_parse.h"
-#include "../../token_count/src/scan.h"
+// #include "../../pretty_printer/src/ll_parse.h"
+// #include "../../token_count/src/scan.h"
 
 struct TYPE {
     int ttype;

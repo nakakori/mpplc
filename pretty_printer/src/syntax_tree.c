@@ -14,7 +14,6 @@ static char *str_alloc();
  */
 void init_syntree(void){
     // init_idtab();
-    init_symtab();
     synroot = NULL;
     curroot = &synroot;
 }
@@ -49,7 +48,7 @@ void register_syntree(int t){
     if(t == TNAME){
         // id_countup(string_attr);
         // p->data.id_pointer = search_idtab(string_attr);
-        p->data.id_pointer = NULL;
+        p->data.id_pointer = search_symtab(string_attr);
         p->data.num_pointer = NULL;
         p->data.str_pointer = NULL;
     }else if(t == TNUMBER){

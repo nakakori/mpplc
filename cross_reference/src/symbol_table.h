@@ -71,10 +71,10 @@ extern int register_subpro(char *np);
 extern void register_type(int type, int arraysize);
 extern void register_param(void);
 
+extern int get_hash(char *str);
+
 extern int reference_name(char *np);
 extern int reference_subpro(char *np);
-
-extern int get_hash(char *str);
 
 extern int get_array_element_type(char *np);
 extern int param_type(int c);

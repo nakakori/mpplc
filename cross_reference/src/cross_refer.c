@@ -2,11 +2,11 @@
 
 static char *type_str[] = {"", "integer", "char", "boolean"};
 
-void print_reference(char *var, ID **table);
-struct NAME_LIST *make_namelist(void);
-void sort_name_list(struct NAME_LIST *list);
-int namecmp(const void *a, const void *b);
-int stricmp(char *a, char *b);
+static void print_reference(char *var, ID **table);
+static struct NAME_LIST *make_namelist(void);
+static void sort_name_list(struct NAME_LIST *list);
+static int namecmp(const void *a, const void *b);
+static int stricmp(char *a, char *b);
 
 int main(int argc, char *argv[]) {
     if(argc < 2){

@@ -814,7 +814,7 @@ static int assign(){
 
     if(ltype != rtype){
         char buf[MAXSTRSIZE];
-        sprintf("dont allow to assign to '%s' from '%s'", type_str[ltype], type_str[rtype]);
+        sprintf(buf, "dont allow to assign to '%s' from '%s'", type_str[ltype], type_str[rtype]);
         create_errmes(buf);
         return error(errmes);
     }

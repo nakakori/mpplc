@@ -47,7 +47,7 @@ void release_symtab(void){
             if(table[i] != NULL){
                 free(table[i]->name);
                 if(table[i]->procname){
-                    free(table[i]);
+                    free(table[i]->procname);
                 }
                 release_type(table[i]->itype);
                 release_line(table[i]->irefp);

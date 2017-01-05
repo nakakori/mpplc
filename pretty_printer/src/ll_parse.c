@@ -9,7 +9,7 @@ static int pflag; // parameter flag (1: paramter, 0: not parameter)
 
 static char *type_str[] = {"", "integer", "char", "boolean"};
 
-static int block();
+static int block(char *label);
 static int var_declare();
 static int arrange_var();
 // static int var_name(); // it might be omitted
@@ -19,7 +19,7 @@ static int array_type();
 static int sub_program();
 // static int procedure_name(); // it might be omitted
 static int parameter();
-static int compound();
+static int compound(char *label);
 static int statement();
 static int branch();
 static int loop();
@@ -81,6 +81,7 @@ void create_errmes(char *mes){
  * program ::= "program" "NAME" ";" block "."
  */
 extern int parse_program(void){
+    char *label;
     init_node();
 
     if(token != TPROGRAM){
@@ -96,12 +97,21 @@ extern int parse_program(void){
     }
     register_syntree(token);
 
+    set_label(name_label(MPROGRAM, string_attr, NONE));
+
     token = scan();
     if(token != TSEMI){
         create_errmes("';' is not found");
         return error(errmes);
     }
     register_syntree(token);
+
+    START(NONE);
+    LAD(gr0, "0", NONE);
+    label = create_label();
+    CALL(label, NONE);
+    CALL("FLASH", NONE);
+    SVC("0", NONE);
 
     token = scan();
     if(block() == ERROR){
@@ -121,7 +131,7 @@ extern int parse_program(void){
 }
 
 /* block ::= {var_declare | sub_program} compound */
-static int block(){
+static int block(char *label){
     init_node();
 
     while(token == TVAR || token == TPROCEDURE){
@@ -143,7 +153,7 @@ static int block(){
     }
 
     switch_scope(GLOBAL);
-    if(compound() == ERROR){
+    if(compound(label) == ERROR){
         return ERROR;
     }
 
@@ -362,6 +372,7 @@ static int array_type(){
 
 /* sub_program ::= "procedure" procedure_name [parameter] ";" [var_declare] compound ";" */
 static int sub_program(){
+    char *label;
     init_node();
 
     if(token != TPROCEDURE){
@@ -379,6 +390,7 @@ static int sub_program(){
     if(register_subpro(string_attr) == ERROR){
         return error(errmes);
     }
+    label = name_label(MSUBPROGRAM, string_attr, NONE);
 
     switch_scope(LOCAL);
     token = scan();
@@ -401,7 +413,7 @@ static int sub_program(){
         }
     }
 
-    if(compound() == ERROR){
+    if(compound(label) == ERROR){
         return ERROR;
     }
 
@@ -481,7 +493,7 @@ static int parameter(){
 }
 
 /* compound ::= "begin" statement {";" statement} "end" */
-static int compound(){
+static int compound(char *label){
     init_node();
 
     if(token != TBEGIN){
@@ -489,6 +501,8 @@ static int compound(){
         return error(errmes);
     }
     register_syntree(token);
+
+    set_label(label);
 
     token = scan();
     if(statement() == ERROR){
@@ -579,6 +593,7 @@ static int statement(){
 
 /* branch ::= "if" expression "then" statement ["else" statement] */
 static int branch(){
+    char *label;
     int type;
     init_node();
 
@@ -596,6 +611,11 @@ static int branch(){
         create_errmes("expression is not boolean type");
         return error(errmes);
     }
+
+    label = create_label();
+    POP(gr1);
+    CPA_rr(gr1, gr0);
+    JZE(label, NONE);
 
     if(token != TTHEN){
         create_errmes("Keyword 'then' is not found");

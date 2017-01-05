@@ -21,13 +21,22 @@
 #define gr7 "gr7"
 
 #define LABEL_LEN 5
+#define MPROGRAM 0
+#define MVARIABLE 1
+#define MSUBPROGRAM 2
+#define MPARAMETER 3
 
-int init_mpplc(char *filename);
+struct _LABELS{
+    char *label;
+    struct _LABELS *next;
+};
+typedef struct _LABELS LABELS;
 
-// extern void write_program();
-
+/* label */
 extern char *create_label(void);
+extern char *name_label(int type, char *name, char *subname);
 extern void set_label(char *label);
+
 /* Assembler instructions */
 extern void START(char *addr);
 extern void END(void);

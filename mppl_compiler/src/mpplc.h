@@ -26,12 +26,6 @@
 #define MSUBPROGRAM 2
 #define MPARAMETER 3
 
-struct _LABELS{
-    char *label;
-    struct _LABELS *next;
-};
-typedef struct _LABELS LABELS;
-
 /* label */
 extern char *create_label(void);
 extern char *name_label(int type, char *name, char *subname);

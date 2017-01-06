@@ -593,7 +593,6 @@ static int statement(){
 
 /* branch ::= "if" expression "then" statement ["else" statement] */
 static int branch(){
-    char *label;
     int type;
     init_node();
 
@@ -612,10 +611,10 @@ static int branch(){
         return error(errmes);
     }
 
-    label = create_label();
-    POP(gr1);
-    CPA_rr(gr1, gr0);
-    JZE(label, NONE);
+    char *label1 = create_label(); // for true label
+    POP(gr1);          // stack top is expression value
+    CPA_rr(gr1, gr0);  // compare gr1(true or flase), gr0(false)
+    JZE(label1, NONE); // gr1 == gr0 --> false --> JUMP label1
 
     if(token != TTHEN){
         create_errmes("Keyword 'then' is not found");
@@ -631,10 +630,18 @@ static int branch(){
     if(token == TELSE){
         register_syntree(token);
 
+        char *label2 = create_label(); // for false label
+        JUMP(label2, NONE); // if expression value is true, JUMP label2
+        set_label(label1);  // if false, execute the following statement
+
         token = scan();
         if(statement() == ERROR){
             return ERROR;
         }
+
+        set_label(label2);
+    }else{
+        set_label(label1); // if there is not keyword "else" and expression value is false, JUMP here(not execute)
     }
 
     end_list_node();
@@ -653,6 +660,9 @@ static int loop(){
     }
     register_syntree(token);
 
+    char *label1 = create_label(); // for true label
+    set_label(label1); // if expression value is true, JUMP label1
+
     token = scan();
     if((type = expression()) == ERROR){
         return ERROR;
@@ -661,6 +671,11 @@ static int loop(){
         create_errmes("expression is not boolean type");
         return error(errmes);
     }
+
+    char *label2 = create_label(); // for false label
+    POP(gr1);          // stack top is expression value
+    CPA_rr(gr1, gr0);  // compare gr1(true or flase), gr0(false)
+    JZE(label1, NONE); // gr1 == gr0 --> false --> JUMP label1
 
     if(token != TDO){
         create_errmes("Keyword 'do' is not found");
@@ -672,6 +687,9 @@ static int loop(){
     if(statement() == ERROR){
         return ERROR;
     }
+
+    JUMP(label1, NONE); // after execute the above statement, JUMP label1
+    set_label(label2);  // if false, JUMP label2(finish while-loop process)
 
     bflag--;
     end_list_node();

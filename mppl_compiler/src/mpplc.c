@@ -2,7 +2,6 @@
 
 static FILE *fp;
 static int number;
-static LABELS *labels; // to release memory allocated for label
 
 static int init_mpplc(char *filename);
 static void end_compile(void);
@@ -42,15 +41,15 @@ int main(int argc, char *argv[]) {
     //     return ERROR;
     // }
 
-    // set_label(create_label());
-    // set_label(create_label());
-    // set_label(create_label());
-    // set_label(create_label());
-    //
-    // set_label(name_label(MPROGRAM, "sample", NONE));
-    // set_label(name_label(MVARIABLE, "var", NONE));
-    // set_label(name_label(MSUBPROGRAM, "sum", NONE));
-    // set_label(name_label(MPARAMETER, "n", "sum"));
+    set_label(create_label());
+    set_label(create_label());
+    set_label(create_label());
+    set_label(create_label());
+
+    set_label(name_label(MPROGRAM, "sample", NONE));
+    set_label(name_label(MVARIABLE, "var", NONE));
+    set_label(name_label(MSUBPROGRAM, "sum", NONE));
+    set_label(name_label(MPARAMETER, "n", "sum"));
 
     end_compile();
 
@@ -82,7 +81,6 @@ int init_mpplc(char *filename){
     }
 
     number = 0;
-    labels = NULL;
 
     return 0;//init_ll_parse(filename);
 }
@@ -92,17 +90,6 @@ void end_compile(void){
     write_obj();
     read_obj();
     // end_ll_parse();
-    // release_labels();
-}
-
-void release_labels(void){
-    LABELS *p, *q;
-
-    for(p = labels; p != NULL; p = q){
-        free(p->label);
-        q = p->next;
-        free(p);
-    }
 }
 
 char *create_label(void){
@@ -158,14 +145,6 @@ char *name_label(int type, char *name, char *subname){
 }
 
 void set_label(char *label){
-    LABELS *p;
-    if((p = (LABELS *)malloc(sizeof(LABELS))) == NULL){
-        printf("can not malloc in set_label\n");
-        return;
-    }
-    p->label = label;
-    p->next = labels;
-    labels = p;
     fprintf(fp, "%s\n", label);
 }
 

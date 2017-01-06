@@ -1025,6 +1025,9 @@ static int term(){
     }
     ltype = type;
 
+    // current stack top is factor value.
+    // if there is not right factor, do nothing.
+
     while (token == TSTAR || token == TDIV || token == TAND) {
         opr = token;
         if((type = multi_operator()) == ERROR){
@@ -1044,8 +1047,8 @@ static int term(){
             return error(errmes);
         }
 
-        POP(gr2);
-        POP(gr1);
+        POP(gr2); // right factor value
+        POP(gr1); // left factor value
         switch (opr) {
             case TSTAR:
                 MULA_rr(gr1, gr2);
@@ -1059,7 +1062,7 @@ static int term(){
             default:
                 break;
         }
-        PUSH("0", gr1);
+        PUSH("0", gr1); // stack result value
     }
 
     end_list_node();
@@ -1075,6 +1078,8 @@ static int factor(){
             if((type =var()) == ERROR){
                 return ERROR;
             }
+            // current stack top is var value
+            // do nothing
             break;
         case TNUMBER:
         case TTRUE:
@@ -1083,6 +1088,8 @@ static int factor(){
             if((type = constant()) == ERROR){
                 return ERROR;
             }
+            // current stack top is constant value
+            // do nothing
             break;
         case TLPAREN:
             register_syntree(token);
@@ -1098,6 +1105,8 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
+            // current stack top is expression value
+            // do nothing
             break;
         case TNOT:
             register_syntree(token);
@@ -1110,6 +1119,14 @@ static int factor(){
                 create_errmes("boolean please");
                 return error(errmes);
             }
+            // current stack top is var value
+            POP(gr1); // gr1 <-- var value(true(not 0) or false(0))
+            CPA_rr(gr0, gr1); // whether gr1 is 0 or not
+            JZE("NOT", NONE); // if gr1 is 0, JUMP logical not label
+            LD_rm(gr1, ONE, NONE); // gr1 <-- true(1) (gr1 may be not 1)
+            set_label("NOT");
+            XOR_rm(gr1, ONE, NONE); // logical not
+
             break;
         case TINTEGER:
         case TBOOLEAN:
@@ -1136,7 +1153,7 @@ static int factor(){
                 return ERROR;
             }
             if(etype == TPARRAY){
-                create_errmes("");
+                create_errmes("expression type should be standard type.(integer , char, boolean)");
                 return error(errmes);
             }
 
@@ -1276,7 +1293,7 @@ static int input(){
             return ERROR;
         }
         if(!(type == TPINT || type == TPCHAR)){
-            create_errmes("");
+            create_errmes("invalid type");
             return error(errmes);
         }
 
@@ -1288,7 +1305,7 @@ static int input(){
                 return ERROR;
             }
             if(!(type == TPINT || type == TPCHAR)){
-                create_errmes("");
+                create_errmes("invalid type");
                 return error(errmes);
             }
         }
@@ -1356,7 +1373,7 @@ static int output_spec(){
             return ERROR;
         }
         if(type == TPARRAY){
-            create_errmes("");
+            create_errmes("invalid type");
             return error(errmes);
         }
 

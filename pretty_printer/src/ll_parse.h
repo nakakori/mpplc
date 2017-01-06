@@ -11,6 +11,10 @@
 #include "../../cross_reference/src/symbol_table.h"
 #include "syntax_tree.h"
 
+struct LABELS {
+    char *label;
+    struct LABELS next;
+};
 
 extern int init_ll_parse(char *filename);
 extern void end_ll_parse(void);

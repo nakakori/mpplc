@@ -9,6 +9,8 @@ static int pflag; // parameter flag (1: paramter, 0: not parameter)
 
 static char *type_str[] = {"", "integer", "char", "boolean"};
 
+static struct LABELS *loop_labels;
+
 static int block(char *label);
 static int var_declare();
 static int arrange_var();
@@ -60,6 +62,7 @@ extern int init_ll_parse(char *filename){
     token = scan();
     bflag = 0;
     pflag = 0;
+    loop_labels = NULL;
 
     return 0;
 }
@@ -651,6 +654,8 @@ static int branch(){
 /* loop ::= "while" expression "do" statement */
 static int loop(){
     int type;
+    struct LABELS *p;
+
     init_node();
     bflag++;
 
@@ -675,7 +680,15 @@ static int loop(){
     char *label2 = create_label(); // for false label
     POP(gr1);          // stack top is expression value
     CPA_rr(gr1, gr0);  // compare gr1(true or flase), gr0(false)
-    JZE(label1, NONE); // gr1 == gr0 --> false --> JUMP label1
+    JZE(label2, NONE); // gr1 == gr0 --> false --> JUMP label2
+
+    if((p = (struct LABELS *)malloc(sizeof(struct LABELS))) == NULL){
+        printf("can not malloc in loop\n");
+        return ERROR;
+    }
+    p->label = label2;
+    p->next = loop_labels;
+    loop_labels = p;
 
     if(token != TDO){
         create_errmes("Keyword 'do' is not found");
@@ -691,6 +704,9 @@ static int loop(){
     JUMP(label1, NONE); // after execute the above statement, JUMP label1
     set_label(label2);  // if false, JUMP label2(finish while-loop process)
 
+    loop_labels = loop_labels->next;
+    free(p);
+
     bflag--;
     end_list_node();
     return 0;
@@ -698,8 +714,6 @@ static int loop(){
 
 /* escape ::= "break" */
 static int escape(){
-    //init_node();
-
     if(token != TBREAK){
         create_errmes("Keyword 'break' is not found");
         return error(errmes);
@@ -711,9 +725,10 @@ static int escape(){
     }
     register_syntree(token);
 
+    JUMP(loop_labels->label, NONE);
+
     token = scan();
 
-    //end_list_node();
     return 0;
 }
 
@@ -737,6 +752,7 @@ static int call_procedure(){
     if((count = reference_subpro(string_attr)) == ERROR){
         return error(errmes);
     }
+    char *label = name_label(MSUBPROGRAM, string_attr, NONE); // get subprogram name label
 
     token = scan();
     if(token == TLPAREN){
@@ -764,6 +780,8 @@ static int call_procedure(){
 
         token = scan();
     }
+
+    JUMP(label, NONE); // JUMP subprogram address
 
     end_list_node();
     return 0;
@@ -816,6 +834,8 @@ static int back(){
     }
     register_syntree(token);
 
+    RET();
+
     token = scan();
 
     //end_list_node();
@@ -834,6 +854,8 @@ static int assign(){
         create_errmes("can not assign to array type");
         return error(errmes);
     }
+
+    char *label = name_label(string_attr);
 
     if(token != TASSIGN){
         create_errmes("':=' is not found");
@@ -856,6 +878,8 @@ static int assign(){
         create_errmes(buf);
         return error(errmes);
     }
+
+    POP(gr2);
 
     end_list_node();
     return 0;
@@ -992,6 +1016,7 @@ static int simple_expression(){
 /* term ::= factor {multi_operator factor} */
 static int term(){
     int type, ltype, rtype;
+    int opr;
 
     init_node();
 
@@ -1001,6 +1026,7 @@ static int term(){
     ltype = type;
 
     while (token == TSTAR || token == TDIV || token == TAND) {
+        opr = token;
         if((type = multi_operator()) == ERROR){
             return ERROR;
         }
@@ -1017,6 +1043,23 @@ static int term(){
             create_errmes("dont allow array operand");
             return error(errmes);
         }
+
+        POP(gr2);
+        POP(gr1);
+        switch (opr) {
+            case TSTAR:
+                MULA_rr(gr1, gr2);
+                break;
+            case TDIV:
+                DIVA_rr(gr1, gr2);
+                break;
+            case TAND:
+                AND_rr(gr1, gr2);
+                break;
+            default:
+                break;
+        }
+        PUSH("0", gr1);
     }
 
     end_list_node();

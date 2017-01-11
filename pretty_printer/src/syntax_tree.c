@@ -36,18 +36,15 @@ void init_node(void){
     return;
 }
 
-void register_syntree(int t){
+SYNTAX_TREE *register_syntree(int t){
     SYNTAX_TREE *p;
 
     if((p = (SYNTAX_TREE *)malloc(sizeof(SYNTAX_TREE))) == NULL){
         printf("can not malloc in init_synlist\n");
-        return;
+        return NULL;
     }
-    // printf("malloc :%d token\n", t);
     (p->data).token = t;
     if(t == TNAME){
-        // id_countup(string_attr);
-        // p->data.id_pointer = search_idtab(string_attr);
         p->data.id_pointer = search_symtab(string_attr);
         p->data.num_pointer = NULL;
         p->data.str_pointer = NULL;
@@ -72,14 +69,12 @@ void register_syntree(int t){
     }else{
         SYNTAX_TREE *q;
         q = *curroot;
-        // printf("list:");
         while (q->next != NULL) {
-            // printf("%d ", q->data.token);
             q = q->next;
         }
-        // printf("%d %d\n", q->data.token, p->data.token);
         q->next = p;
     }
+    return p;
 }
 
 void end_list_node(void){

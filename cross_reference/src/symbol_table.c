@@ -224,6 +224,7 @@ int register_subpro(char *np){
 void register_type(int type, int arraysize){
     struct TYPE **p;
     int i;
+    int c = undefcount;
 
     if( (p = (struct TYPE **)malloc(sizeof(struct TYPE *) * undefcount)) == NULL ){
         printf("can not malloc in register_type()\n");
@@ -268,17 +269,28 @@ void register_type(int type, int arraysize){
         undef_list->idp->itype = p[--undefcount];
         UNDEFINE_LIST *tmp = undef_list;
         undef_list = tmp->nextp;
+
+        if(type != TPPROC){
+            set_label(name_label(MVARIABLE, tmp->idp->name, tmp->idp->procname));
+            if(arraysize > 0){ // type: array
+                DS(arraysize);
+            }else{ // type: standard
+                DC("0");
+            }
+        }
+
         free(tmp);
     }
-    undefcount = 0; // 一応
+    undefcount = 0;
 }
 
-void register_param(void){
+UNDEFINE_LIST *register_param(void){
     struct TYPE *p;
+    UNDEFINE_LIST *list = param_list;
 
     if( (p = (struct TYPE *)malloc(sizeof(struct TYPE))) == NULL ){
         printf("can not malloc in register_type()\n");
-        return;
+        return NULL;
     }
     p->ttype = TPPROC;
     p->arraysize = 0;
@@ -287,16 +299,22 @@ void register_param(void){
 
     subpro->itype = p;
 
-    while(param_list != NULL){
-        UNDEFINE_LIST *tmp = param_list;
-        param_list = tmp->nextp;
-        if(param_list != NULL){
-            param_list->idp->itype->paratp = tmp->idp->itype;
+    while(list != NULL){
+        UNDEFINE_LIST *tmp = list;
+        list = tmp->nextp;
+        if(list != NULL){
+            list->idp->itype->paratp = tmp->idp->itype;
         }else{
             p->paratp = tmp->idp->itype;
         }
-        free(tmp);
+        // printf("%s %s\n", tmp->idp->name, tmp->idp->procname);
+        // free(tmp);
     }
+    return param_list;
+}
+
+void reset_paramlist(void){
+    param_list = NULL;
 }
 
 /* hash functions */

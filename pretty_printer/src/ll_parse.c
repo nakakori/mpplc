@@ -10,6 +10,10 @@ static int pflag; // parameter flag (1: paramter, 0: not parameter)
 static char *type_str[] = {"", "integer", "char", "boolean"};
 
 static struct LABELS *loop_labels;
+static ID *curvar; // current variable
+static int type_curvar; // current variable type(LEFT_VAR or RIGHT_VAR)
+static sbool trueflag;
+static sbool falseflag;
 
 static int block(char *label);
 static int var_declare();
@@ -20,8 +24,8 @@ static int standard_type();
 static int array_type();
 static int sub_program();
 // static int procedure_name(); // it might be omitted
-static int parameter();
-static int compound(char *label);
+static int parameter(UNDEFINE_LIST **list);
+static int compound();
 static int statement();
 static int branch();
 static int loop();
@@ -45,6 +49,8 @@ static int output();
 static int output_spec();
 static int empty();
 
+static void switch_var_type(int type);
+
 /* initilize LL parse */
 extern int init_ll_parse(char *filename){
     /* initilize message buffer */
@@ -63,6 +69,9 @@ extern int init_ll_parse(char *filename){
     bflag = 0;
     pflag = 0;
     loop_labels = NULL;
+    curvar = NULL;
+    trueflag = SFALSE;
+    falseflag = SFALSE;
 
     return 0;
 }
@@ -113,11 +122,11 @@ extern int parse_program(void){
     LAD(gr0, "0", NONE);
     label = create_label();
     CALL(label, NONE);
-    CALL("FLASH", NONE);
+    CALL("FLUSH", NONE);
     SVC("0", NONE);
 
     token = scan();
-    if(block() == ERROR){
+    if(block(label) == ERROR){
         return ERROR;
     }
 
@@ -156,9 +165,12 @@ static int block(char *label){
     }
 
     switch_scope(GLOBAL);
-    if(compound(label) == ERROR){
+    set_label(label);
+    if(compound() == ERROR){
         return ERROR;
     }
+
+    RET();
 
     end_list_node();
     end_scope(GLOBAL);
@@ -376,6 +388,8 @@ static int array_type(){
 /* sub_program ::= "procedure" procedure_name [parameter] ";" [var_declare] compound ";" */
 static int sub_program(){
     char *label;
+    UNDEFINE_LIST *paramlist = NULL;
+    sbool flag = SFALSE;
     init_node();
 
     if(token != TPROCEDURE){
@@ -398,7 +412,7 @@ static int sub_program(){
     switch_scope(LOCAL);
     token = scan();
     if(token == TLPAREN){
-        if(parameter() == ERROR){
+        if(parameter(&paramlist) == ERROR){
             return ERROR;
         }
     }
@@ -416,7 +430,26 @@ static int sub_program(){
         }
     }
 
-    if(compound(label) == ERROR){
+    set_label(label);
+    if(paramlist != NULL){
+        POP(gr2);
+        flag = STRUE;
+    }
+    while(paramlist != NULL){
+        UNDEFINE_LIST *tmp = paramlist;
+        paramlist = tmp->nextp;
+
+        POP(gr1); // gr1 <-- address
+        ST(gr1, name_label(MPARAMETER, tmp->idp->name, tmp->idp->procname), NONE);
+
+        free(tmp);
+    }
+    if(flag == STRUE){
+        PUSH("0", gr2);
+    }
+    reset_paramlist();
+
+    if(compound() == ERROR){
         return ERROR;
     }
 
@@ -426,6 +459,8 @@ static int sub_program(){
     }
     register_syntree(token);
 
+    RET();
+
     token = scan();
 
     end_list_node();
@@ -434,7 +469,7 @@ static int sub_program(){
 }
 
 /* parameter ::= "(" arrange_var ":" type {";" arrange_var ":" type} ")" */
-static int parameter(){
+static int parameter(UNDEFINE_LIST **list){
     init_node();
     switch_varorpara(PARAMETER);
     pflag = 1;
@@ -490,13 +525,13 @@ static int parameter(){
     token = scan();
 
     pflag = 0;
-    register_param();
+    *list = register_param();
     end_list_node();
     return 0;
 }
 
 /* compound ::= "begin" statement {";" statement} "end" */
-static int compound(char *label){
+static int compound(){
     init_node();
 
     if(token != TBEGIN){
@@ -504,8 +539,6 @@ static int compound(char *label){
         return error(errmes);
     }
     register_syntree(token);
-
-    set_label(label);
 
     token = scan();
     if(statement() == ERROR){
@@ -614,8 +647,9 @@ static int branch(){
         return error(errmes);
     }
 
+    // gr1 is expression value
     char *label1 = create_label(); // for true label
-    POP(gr1);          // stack top is expression value
+    // POP(gr1);          // stack top is expression value
     CPA_rr(gr1, gr0);  // compare gr1(true or flase), gr0(false)
     JZE(label1, NONE); // gr1 == gr0 --> false --> JUMP label1
 
@@ -666,6 +700,7 @@ static int loop(){
     register_syntree(token);
 
     char *label1 = create_label(); // for true label
+    char *label2 = create_label(); // for false label
     set_label(label1); // if expression value is true, JUMP label1
 
     token = scan();
@@ -677,8 +712,8 @@ static int loop(){
         return error(errmes);
     }
 
-    char *label2 = create_label(); // for false label
-    POP(gr1);          // stack top is expression value
+    // gr1 is expression value
+    // POP(gr1);          // stack top is expression value
     CPA_rr(gr1, gr0);  // compare gr1(true or flase), gr0(false)
     JZE(label2, NONE); // gr1 == gr0 --> false --> JUMP label2
 
@@ -781,7 +816,7 @@ static int call_procedure(){
         token = scan();
     }
 
-    JUMP(label, NONE); // JUMP subprogram address
+    CALL(label, NONE); // JUMP subprogram address
 
     end_list_node();
     return 0;
@@ -791,8 +826,10 @@ static int call_procedure(){
 static int arrange_expression(){
     int type;
     int count = 0;
+
     init_node();
     /* may be able to write do-while */
+    switch_var_type(ARG_VAR);
     if((type = expression()) == ERROR){
         return ERROR;
     }
@@ -804,10 +841,28 @@ static int arrange_expression(){
         return error(errmes);
     }
 
+    /*
+     * expression type
+     *   variable: stack variable address
+     *   other: allocate working area
+     *     and expression value store at this area
+     */
+    if(curvar != NULL){ // variable
+        LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+        PUSH("0", gr1);
+    }else{ // other
+        char *label = create_label();
+        set_required(label, NULL);
+        LAD(gr2, label, NONE);
+        ST(gr1, "0", gr2);
+        PUSH("0", gr2);
+    }
+
     while (token == TCOMMA) {
         register_syntree(token);
 
         token = scan();
+        switch_var_type(ARG_VAR);
         if((type = expression()) == ERROR){
             return ERROR;
         }
@@ -817,6 +872,17 @@ static int arrange_expression(){
             sprintf(buf, "the %d paramter dont much type", count);
             create_errmes(buf);
             return error(errmes);
+        }
+
+        if(curvar != NULL){ // variable
+            LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            PUSH("0", gr1);
+        }else{ // other
+            char *label = create_label();
+            set_required(label, NULL);
+            LAD(gr2, label, NONE);
+            ST(gr1, "0", gr2);
+            PUSH("0", gr2);
         }
     }
 
@@ -847,6 +913,7 @@ static int assign(){
     int ltype, rtype;
     init_node();
 
+    switch_var_type(LEFT_VAR);
     if((ltype = var()) == ERROR){ // left_hand is only var
         return ERROR;
     }
@@ -855,15 +922,19 @@ static int assign(){
         return error(errmes);
     }
 
-    char *label = name_label(string_attr);
-
     if(token != TASSIGN){
         create_errmes("':=' is not found");
         return error(errmes);
     }
     register_syntree(token);
 
+    if(curvar->ispara == PARAMETER){
+        LD_rm(gr1, name_label(MPARAMETER, curvar->name, curvar->procname), NONE);
+        PUSH("0", gr1);
+    }
+
     token = scan();
+    switch_var_type(RIGHT_VAR);
     if((rtype = expression()) == ERROR){
         return ERROR;
     }
@@ -879,7 +950,28 @@ static int assign(){
         return error(errmes);
     }
 
-    POP(gr2);
+    /*
+     * gr1 <-- right expression value
+     * left value
+     *     standard variable: direct assign to variable address
+     *          no use other register
+     *     array variable: assign to variable address + element
+     *          gr2 <-- element value
+     *     parameter: assign to argument address
+     *          gr2 <-- argument address
+     */
+
+    // POP(gr1); // right expression value
+    if(curvar->ispara == PARAMETER){ // parameter
+        POP(gr2); // argument address
+        ST(gr1, "0", gr2);
+    }else if(curvar->itype->ttype == TPARRAY){ // array variable
+        POP(gr2); // element value
+        ST(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), gr2);
+    }else{ // standard variable
+        ST(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+    }
+    curvar = NULL;
 
     end_list_node();
     return 0;
@@ -899,6 +991,8 @@ static int var(){
         return error(errmes);
     }
 
+    ID *var = search_symtab(string_attr);
+
     token = scan();
     if(token == TLSQPAREN){
         int vtype = get_array_element_type(string_attr);
@@ -911,6 +1005,8 @@ static int var(){
         register_syntree(token);
 
         token = scan();
+        int tvar = type_curvar;
+        switch_var_type(RIGHT_VAR);
         if((etype = expression()) == ERROR){
             return ERROR;
         }
@@ -918,6 +1014,7 @@ static int var(){
             create_errmes("array subscript is not an integer");
             return error(errmes);
         }
+        switch_var_type(tvar);
 
         if(token != TRSQPAREN){
             create_errmes("']' is not found");
@@ -928,6 +1025,41 @@ static int var(){
         token = scan();
 
         type = vtype;
+
+        // gr1 <-- expression value
+
+        // POP(gr1); // gr1 <-- expression value
+        LAD(gr2, itoa(var->itype->arraysize), NONE); // gr2 <-- arraysize
+        CPA_rr(gr1, gr2); // whether gr1 < arraysize
+        char *inrange = create_label();
+        JMI(inrange, NONE); // gr1 < gr2 is in array size range
+        CPA_rr(gr1, gr0); // whether gr1 >= 0
+        JPL(inrange, NONE); // gr1 > 0
+        JZE(inrange, NONE); // gr1 = 0
+        JUMP("EROV", NONE);
+        set_label(inrange);
+        if(type_curvar == RIGHT_VAR){
+            int lscope = (var->ispara == PARAMETER) ? MPARAMETER : MVARIABLE;
+            char *label = name_label(lscope, var->name, var->procname);
+            LD_rm(gr1, label, gr1); // gr1 <-- (variable + gr1)
+            // PUSH("0", gr1);
+        }else{
+            // PUSH(gr1, NONE); // stack top is element value
+        }
+    }else{
+        if(type_curvar == RIGHT_VAR){
+            int lscope = (var->ispara == PARAMETER) ? MPARAMETER : MVARIABLE;
+            char *label = name_label(lscope, var->name, var->procname);
+            LD_rm(gr1, label, NONE);
+            if(var->ispara == PARAMETER){
+                LD_rm(gr1, "0", gr1);
+            }
+            // PUSH("0", gr1);
+        }
+    }
+
+    if(type_curvar == LEFT_VAR || type_curvar == ARG_VAR){
+        curvar = var;
     }
 
     end_list_node();
@@ -937,6 +1069,7 @@ static int var(){
 /* expression ::= simple_expression {relatinal_operator simple_expression} */
 static int expression(){
     int type, ltype, rtype;
+    int opr;
 
     init_node();
 
@@ -945,12 +1078,30 @@ static int expression(){
     }
     ltype = type;
 
+    // gr1 is simple expression value
+
     while (token == TEQUAL || token == TNOTEQ || token == TLE || token == TLEEQ || token == TGR || token == TGREQ) {
+        if(type_curvar == ARG_VAR && curvar != NULL){
+            LD_rm(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            curvar = NULL;
+        }
+        opr = token;
         if((type = relatinal_operator()) == ERROR){
             return ERROR;
         }
+
+        PUSH("0", gr1); // stack left value
+
+        int tmp = type_curvar;
+        switch_var_type(RIGHT_VAR);
         if((rtype = simple_expression()) == ERROR){
             return ERROR;
+        }
+        switch_var_type(tmp);
+
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
         if(ltype != rtype){
             char buf[MAXSTRSIZE];
@@ -958,10 +1109,97 @@ static int expression(){
             create_errmes(buf);
             return error(errmes);
         }
-        if(ltype == TPARRAY || rtype == TPARRAY){
-            create_errmes("dont allow array operand");
-            return error(errmes);
+
+        // POP(gr1); // gr1 <-- right value
+        POP(gr2); // gr2 <-- left value
+        CPA_rr(gr2, gr1); // gr2 comp ge1
+        switch (opr) {
+            case TEQUAL:{
+                // whether gr2 = gr3 or not
+                // gr2 = gr3 --> ZF:1 --> true
+                char *equal = create_label();
+                char *label = create_label();
+                JZE(equal, NONE); // gr2 = gr1 --> JUMP EQUAL label
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                JUMP(label, NONE); // gr2 <> gr1
+                set_label(equal); // gr2 = gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                set_label(label);
+                break;
+            }
+            case TNOTEQ:{
+                // whether gr2 <> gr3 or not
+                // gr2 <> gr3 --> ZF:0 --> true
+                char *noteq = create_label();
+                char *label = create_label();
+                JNZ(noteq, NONE); // gr2 <> gr1 --> JUMP NOTEQ label
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                JUMP(label, NONE); // gr2 = gr1
+                set_label(noteq); // gr2 <> gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                set_label(label);
+                break;
+            }
+            case TLE:{
+                // whether gr2 < gr3 or not
+                // gr2 < gr3 --> SF:1, ZF:0 --> true
+                char *le = create_label();
+                char *label = create_label();
+                JMI(le, NONE); // gr2 < gr1 --> JUMP LE label
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                JUMP(label, NONE); // gr2 >= gr1
+                set_label(le); // gr2 < gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                set_label(label);
+                break;
+            }
+            case TLEEQ:{
+                // whether gr2 <= gr1 or not
+                // gr2 <= gr1 --> SF:1, ZF:1 --> true
+                char *leeq = create_label();
+                char *label = create_label();
+                // JMI(leeq, NONE); // gr2 < gr3 --> JUMP LEEQ label
+                // JZE(leeq, NONE); // gr2 = gr3 --> JUMP LEEQ label
+                JPL(leeq, NONE); // gr2 > gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                JUMP(label, NONE); // gr2 > gr1
+                set_label(leeq); // gr2 <= gr1
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                set_label(label);
+                break;
+            }
+            case TGR:{
+                // whether gr2 > gr1 or not
+                // gr2 > gr1 --> SF:0, ZF:0 --> true
+                char *gr = create_label();
+                char *label = create_label();
+                JPL(gr, NONE); // gr2 > gr1
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                JUMP(label, NONE); // gr2 <= gr1
+                set_label(gr); // gr2 > gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                set_label(label);
+                break;
+            }
+            case TGREQ:{
+                // whether gr2 >= gr1 or not
+                // gr2 >= gr1 --> SF:0, ZF:1 --> true
+                char *greq = create_label();
+                char *label = create_label();
+                // JPL(greq, NONE); // gr2 > gr1
+                // JZE(greq, NONE); // gr2 = gr1
+                JMI(greq, NONE); // gr2 < gr1
+                LAD(gr1, OBJTRUE, NONE); // gr1 <-- 1(true)
+                JUMP(label, NONE); // gr2 < gr1
+                set_label(greq); // gr2 >= gr1
+                LD_rr(gr1, gr0); // gr1 <-- 0(false)
+                set_label(label);
+                break;
+            }
+            default:
+                break;
         }
+        // PUSH("0", gr1);
     }
     end_list_node();
     return type;
@@ -970,6 +1208,8 @@ static int expression(){
 /* simple_expression ::= ["+"|"-"] term {add_operator term} */
 static int simple_expression(){
     int type, ltype, rtype;
+    int opr;
+    sbool mflag = SFALSE;
     sbool flag = SFALSE;
 
     init_node();
@@ -977,6 +1217,9 @@ static int simple_expression(){
     if(token == TPLUS || token == TMINUS){
         register_syntree(token);
         flag = STRUE;
+        if(token == TMINUS){
+            mflag = STRUE;
+        }
         token = scan();
     }
     if((type = term()) == ERROR){
@@ -990,12 +1233,41 @@ static int simple_expression(){
     }
     ltype = type;
 
+    // gr1 is term value
+
+    if(mflag == STRUE){
+        // POP(gr2); // gr2 <-- unsighnd integer
+        LD_rr(gr2, gr0); // gr1 <-- 0
+        SUBA_rr(gr2, gr1); // gr2 <-- 0 - gr1
+        JOV("EOVF", NONE);
+        LD_rr(gr1, gr2); // gr1 <-- gr2(-gr1)
+        // PUSH("0", gr1);
+    }
+
+    // gr1 is term value(processed minus value)
+
     while (token == TPLUS || token == TMINUS || token == TOR) {
+        if(type_curvar == ARG_VAR && curvar != NULL){
+            LD_rm(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            curvar = NULL;
+        }
+        opr = token;
         if((type = add_operator()) == ERROR){
             return ERROR;
         }
+
+        PUSH("0", gr1); // stack left value
+
+        int tmp = type_curvar;
+        switch_var_type(RIGHT_VAR);
         if((rtype = term()) == ERROR){
             return ERROR;
+        }
+        switch_var_type(tmp);
+
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
         if(type != ltype || type != rtype || ltype != rtype){
             char buf[MAXSTRSIZE];
@@ -1003,10 +1275,26 @@ static int simple_expression(){
             create_errmes(buf);
             return error(errmes);
         }
-        if(ltype == TPARRAY || rtype == TPARRAY){
-            create_errmes("dont allow array operand");
-            return error(errmes);
+
+        // POP(gr1); // gr1 <-- right term
+        POP(gr2); // gr2 <-- left term
+        switch (opr) {
+            case TPLUS:
+                ADDA_rr(gr1, gr2);
+                JOV("EOVF", NONE);
+                break;
+            case TMINUS:
+                SUBA_rr(gr2, gr1); // left term(gr2) - right term(gr1)
+                JOV("EOVF", NONE);
+                LD_rr(gr1, gr2);
+                break;
+            case TOR:
+                OR_rr(gr1, gr2);
+                break;
+            default: // never pass
+                break;
         }
+        // PUSH("0", gr1);
     }
 
     end_list_node();
@@ -1025,16 +1313,31 @@ static int term(){
     }
     ltype = type;
 
-    // current stack top is factor value.
+    // gr1 is factor value.
     // if there is not right factor, do nothing.
 
     while (token == TSTAR || token == TDIV || token == TAND) {
+        if(type_curvar == ARG_VAR && curvar != NULL){
+            LD_rm(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            curvar = NULL;
+        }
         opr = token;
         if((type = multi_operator()) == ERROR){
             return ERROR;
         }
+
+        PUSH("0", gr1); // stack left value
+
+        int tmp = type_curvar;
+        switch_var_type(RIGHT_VAR);
         if((rtype = factor()) == ERROR){
             return ERROR;
+        }
+        switch_var_type(tmp);
+
+        if(ltype == TPARRAY || rtype == TPARRAY){
+            create_errmes("dont allow array operand");
+            return error(errmes);
         }
         if(type != ltype || type != rtype || ltype != rtype){
             char buf[MAXSTRSIZE];
@@ -1042,19 +1345,18 @@ static int term(){
             create_errmes(buf);
             return error(errmes);
         }
-        if(ltype == TPARRAY || rtype == TPARRAY){
-            create_errmes("dont allow array operand");
-            return error(errmes);
-        }
 
-        POP(gr2); // right factor value
-        POP(gr1); // left factor value
+        // POP(gr1); // right factor value
+        POP(gr2); // left factor value
         switch (opr) {
             case TSTAR:
                 MULA_rr(gr1, gr2);
+                JOV("EOVF", NONE);
                 break;
             case TDIV:
-                DIVA_rr(gr1, gr2);
+                DIVA_rr(gr2, gr1);
+                JOV("E0DIV", NONE);
+                LD_rr(gr1, gr2);
                 break;
             case TAND:
                 AND_rr(gr1, gr2);
@@ -1062,7 +1364,7 @@ static int term(){
             default:
                 break;
         }
-        PUSH("0", gr1); // stack result value
+        // PUSH("0", gr1); // stack result value
     }
 
     end_list_node();
@@ -1075,10 +1377,10 @@ static int factor(){
 
     switch (token) {
         case TNAME:
-            if((type =var()) == ERROR){
+            if((type = var()) == ERROR){
                 return ERROR;
             }
-            // current stack top is var value
+            // gr1 is var value
             // do nothing
             break;
         case TNUMBER:
@@ -1088,7 +1390,7 @@ static int factor(){
             if((type = constant()) == ERROR){
                 return ERROR;
             }
-            // current stack top is constant value
+            // gr1 is constant value
             // do nothing
             break;
         case TLPAREN:
@@ -1105,10 +1407,10 @@ static int factor(){
             register_syntree(token);
 
             token = scan();
-            // current stack top is expression value
+            // gr1 is expression value
             // do nothing
             break;
-        case TNOT:
+        case TNOT:{
             register_syntree(token);
 
             token = scan();
@@ -1119,15 +1421,18 @@ static int factor(){
                 create_errmes("boolean please");
                 return error(errmes);
             }
-            // current stack top is var value
-            POP(gr1); // gr1 <-- var value(true(not 0) or false(0))
+            // gr1 is factor value
+            // POP(gr1); // gr1 <-- var value(true(not 0) or false(0))
             CPA_rr(gr0, gr1); // whether gr1 is 0 or not
-            JZE("NOT", NONE); // if gr1 is 0, JUMP logical not label
-            LD_rm(gr1, ONE, NONE); // gr1 <-- true(1) (gr1 may be not 1)
-            set_label("NOT");
-            XOR_rm(gr1, ONE, NONE); // logical not
-
+            char *not = create_label();
+            JZE(not, NONE); // if gr1 is 0, JUMP logical not label
+            LAD(gr2, "1", NONE); // gr2 <-- 1
+            LD_rr(gr1, gr2); // gr1 <-- true(1) (gr1 may be not 1)
+            set_label(not);
+            XOR_rr(gr1, gr2); // logical not
+            // PUSH("0", gr1);
             break;
+        }
         case TINTEGER:
         case TBOOLEAN:
         case TCHAR:
@@ -1163,6 +1468,73 @@ static int factor(){
             }
             register_syntree(token);
 
+            // gr1 is expression value
+            // POP(gr1);
+            if(etype == TPINT){
+                switch (type) {
+                    case TPINT:
+                        // do nothing
+                        break;
+                    case TPBOOL:{
+                        // if expression value is not 0, gr1 <-- 1
+                        CPA_rr(gr1, gr0);
+                        char *castitob = create_label();
+                        JZE(castitob, NONE);
+                        LAD(gr1, OBJTRUE, 0);
+                        set_label(castitob);
+                        break;
+                    }
+                    case TPCHAR:{
+                        // do nothing or extract the lower 7 bits
+                        LAD(gr2, "127", NONE); // gr2 <-- #007F(127)
+                        AND_rr(gr1, gr2); // gr1 and #007F --> #00xx
+                        break;
+                    }
+                }
+            }else if(etype == TPBOOL){
+                switch (type) {
+                    case TPINT:{
+                        if(trueflag != STRUE && falseflag != STRUE){
+                            CPA_rr(gr0, gr1); // whether gr1 is true or false
+                            char *castbtoi = create_label();
+                            JZE(castbtoi, NONE);
+                            LAD(gr1, OBJTRUE, 0); // gr1 <-- 1 (true)
+                            set_label(castbtoi);
+                        }else{
+                            trueflag = SFALSE;
+                            falseflag = SFALSE;
+                        }
+                        break;
+                    }
+                    case TPBOOL:
+                        // do nothing
+                        break;
+                    case TPCHAR:{
+                        if(trueflag != STRUE && falseflag != STRUE){
+                            CPA_rr(gr0, gr1); // whether gr1 is true or false
+                            char *castbtoc = create_label();
+                            JZE(castbtoc, NONE);
+                            LAD(gr1, OBJTRUE, 0); // gr1 <-- 1 (true)
+                            set_label(castbtoc);
+                            break;
+                        }
+                    }
+                }
+            }else if(etype == TPCHAR){
+                switch (type) {
+                    case TPINT:
+                        // do nothing
+                        break;
+                    case TPBOOL:
+                        // do nothing
+                        break;
+                    case TPCHAR:
+                        // do nothing
+                        break;
+                }
+            }
+            // PUSH("0", gr1);
+
             token = scan();
             break;
         default:
@@ -1181,10 +1553,18 @@ static int constant(){
     switch (token) {
         case TNUMBER:
             type = TPINT;
+            LAD(gr1, itoa(num_attr), NONE);
+            // PUSH("0", gr1);
             break;
         case TFALSE:
+            type = TPBOOL;
+            falseflag = STRUE;
+            LD_rr(gr1, gr0);
+            break;
         case TTRUE:
             type = TPBOOL;
+            trueflag = STRUE;
+            LAD(gr1, OBJTRUE, NONE);
             break;
         case TSTRING:
             if(length != 1){
@@ -1194,6 +1574,8 @@ static int constant(){
                 return error(errmes);
             }
             type = TPCHAR;
+            int c = (int)(string_attr[0]);
+            LAD(gr1, itoa(c), NONE);
             break;
         default:
             create_errmes("constant word is not found");
@@ -1276,6 +1658,7 @@ static int relatinal_operator(){
 /* input ::= ("read" | "readln") ["(" var {"," var} ")"] */
 static int input(){
     int type;
+    sbool readlnflag = SFALSE;
     init_node();
 
     if(token != TREAD && token != TREADLN){
@@ -1284,11 +1667,16 @@ static int input(){
     }
     register_syntree(token);
 
+    if(token == TREADLN){
+        readlnflag = STRUE;
+    }
+
     token = scan();
     if(token == TLPAREN){
         register_syntree(token);
 
         token = scan();
+        switch_var_type(LEFT_VAR);
         if((type = var()) == ERROR){
             return ERROR;
         }
@@ -1297,10 +1685,28 @@ static int input(){
             return error(errmes);
         }
 
+        if(curvar->ispara == VARIABLE){
+            LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+        }else{ // parameter
+            LD_rm(gr1, name_label(MPARAMETER, curvar->name, curvar->procname), NONE);
+        }
+        switch (type) {
+            case TPINT:
+                CALL("READINT", NONE);
+                break;
+            case TPCHAR:
+                CALL("READCHAR", NONE);
+                break;
+            default: // never pass
+                break;
+        }
+        curvar = NULL;
+
         while(token == TCOMMA){
             register_syntree(token);
 
             token = scan();
+            switch_var_type(LEFT_VAR);
             if((type = var()) == ERROR){
                 return ERROR;
             }
@@ -1308,6 +1714,24 @@ static int input(){
                 create_errmes("invalid type");
                 return error(errmes);
             }
+
+            if(curvar->ispara == VARIABLE){
+                LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            }else{ // parameter
+                LD_rm(gr1, name_label(MPARAMETER, curvar->name, curvar->procname), NONE);
+            }
+
+            switch (type) {
+                case TPINT:
+                    CALL("READINT", NONE);
+                    break;
+                case TPCHAR:
+                    CALL("READCHAR", NONE);
+                    break;
+                default: // never pass
+                    break;
+            }
+            curvar = NULL;
         }
         if(token != TRPAREN){
             create_errmes("')' is not found");
@@ -1316,6 +1740,10 @@ static int input(){
         register_syntree(token);
 
         token = scan();
+    }
+
+    if(readlnflag == STRUE){
+        CALL("READLINE", NONE);
     }
 
     end_list_node();
@@ -1324,6 +1752,8 @@ static int input(){
 
 /* output ::= ("write" | "writeln") ["(" output_spec {"," output_spec} ")"] */
 static int output(){
+    sbool writelnflag = SFALSE;
+    int optputtype;
     init_node();
 
     if(token != TWRITE && token != TWRITELN){
@@ -1331,22 +1761,57 @@ static int output(){
         return error(errmes);
     }
     register_syntree(token);
+    if(token == TWRITELN){
+        writelnflag = STRUE;
+    }
 
     token = scan();
     if(token == TLPAREN){
         register_syntree(token);
 
         token = scan();
-        if(output_spec() == ERROR){
+        if((optputtype = output_spec()) == ERROR){
             return ERROR;
+        }
+        switch (optputtype) {
+            case TPINT:
+                CALL("WRITEINT", NONE);
+                break;
+            case TPCHAR:
+                CALL("WRITECHAR", NONE);
+                break;
+            case TPBOOL:
+                CALL("WRITEBOOL", NONE);
+                break;
+            case TPSTRING:
+                CALL("WRITESTR", NONE);
+                break;
+            default:
+                break;
         }
 
         while(token == TCOMMA){
             register_syntree(token);
 
             token = scan();
-            if(output_spec() == ERROR){
+            if((optputtype = output_spec()) == ERROR){
                 return ERROR;
+            }
+            switch (optputtype) {
+                case TPINT:
+                    CALL("WRITEINT", NONE);
+                    break;
+                case TPCHAR:
+                    CALL("WRITECHAR", NONE);
+                    break;
+                case TPBOOL:
+                    CALL("WRITEBOOL", NONE);
+                    break;
+                case TPSTRING:
+                    CALL("WRITESTR", NONE);
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -1357,6 +1822,10 @@ static int output(){
         register_syntree(token);
 
         token = scan();
+    }
+
+    if(writelnflag == STRUE){
+        CALL("WRITELINE", NONE);
     }
 
     end_list_node();
@@ -1369,13 +1838,27 @@ static int output_spec(){
     init_node();
 
     if(token == TPLUS || token == TMINUS || token == TNAME || token == TNUMBER || token == TFALSE || token == TTRUE || (token == TSTRING && length == 1) || token == TLPAREN || token == TNOT || token == TINTEGER || token == TBOOLEAN || token == TCHAR){
-        if((type = expression()) == ERROR){
+        switch_var_type(RIGHT_VAR);
+        if((type = expression()) == ERROR){ // var <-- LEFT_VAR
             return ERROR;
         }
         if(type == TPARRAY){
             create_errmes("invalid type");
             return error(errmes);
         }
+
+        // gr1 <-- expression value
+
+        // if(curvar != NULL){
+        //     if(curvar->itype->ttype == TPARRAY){ // variable type is array
+        //         POP(gr1); // gr1 <-- element value
+        //         LD_rm(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), gr1);
+        //     }else{ // variable type is standard
+        //         LD_rm(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+        //     }
+        // }else{
+        //     POP(gr1);
+        // }
 
         if(token == TCOLON){
             register_syntree(token);
@@ -1387,7 +1870,11 @@ static int output_spec(){
             }
             register_syntree(token);
 
+            LAD(gr2, itoa(num_attr), NONE);
+
             token = scan();
+        }else{
+            LD_rr(gr2, gr0);
         }
     }else{
         if(token != TSTRING){
@@ -1398,16 +1885,26 @@ static int output_spec(){
             create_errmes("string length 0 or 2 or more");
             return error(errmes);
         }
-        register_syntree(token);
+        SYNTAX_TREE *node = register_syntree(token);
+        type = TPSTRING;
+
+        char *label = create_label();
+        set_required(label, node->data.str_pointer);
+        LAD(gr1, label, NONE); // gr1 <-- character string
+        LD_rr(gr2, gr0); // gr2 <-- 0 : minimum
 
         token = scan();
     }
 
     end_list_node();
-    return 0;
+    return type;
 }
 
 /* empty ::= Epsilon */
 static int empty(){
     return 0;
+}
+
+void switch_var_type(int type){
+    type_curvar = type;
 }

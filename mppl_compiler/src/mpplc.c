@@ -1,11 +1,15 @@
 #include "mpplc.h"
 
 static FILE *fp;
+static char *file;
 static int number;
+static struct REQUIRE_DATA *list;
 
 static int init_mpplc(char *filename);
 static void end_compile(void);
-static void release_labels(void);
+// static void release_labels(void);
+
+static void working_area_obj(void);
 
 static void error_obj(void);
 static void eovf_obj(void);
@@ -26,6 +30,8 @@ static void readchar_obj(void);
 static void readint_obj(void);
 static void readline_obj(void);
 
+static void use_label_obj(void);
+
 int main(int argc, char *argv[]) {
     if(argc < 2){
         printf("File nam id not given.\n");
@@ -37,19 +43,10 @@ int main(int argc, char *argv[]) {
         return ERROR;
     }
 
-    // if(parse_program() < 0){
-    //     return ERROR;
-    // }
-
-    set_label(create_label());
-    set_label(create_label());
-    set_label(create_label());
-    set_label(create_label());
-
-    set_label(name_label(MPROGRAM, "sample", NONE));
-    set_label(name_label(MVARIABLE, "var", NONE));
-    set_label(name_label(MSUBPROGRAM, "sum", NONE));
-    set_label(name_label(MPARAMETER, "n", "sum"));
+    if(parse_program() < 0){
+        // remove(file); // remove csl file
+        return ERROR;
+    }
 
     end_compile();
 
@@ -59,7 +56,7 @@ int main(int argc, char *argv[]) {
 }
 
 int init_mpplc(char *filename){
-    char *file, *p;
+    char *p;
     char extension[] = ".csl";
     int i;
 
@@ -81,15 +78,19 @@ int init_mpplc(char *filename){
     }
 
     number = 0;
+    list = NULL;
 
-    return 0;//init_ll_parse(filename);
+    return init_ll_parse(filename);
 }
 
 void end_compile(void){
+    working_area_obj();
     error_obj();
     write_obj();
     read_obj();
+    use_label_obj();
     // end_ll_parse();
+    fclose(fp);
 }
 
 char *create_label(void){
@@ -121,14 +122,14 @@ char *name_label(int type, char *name, char *subname){
         }
         p[0] = p[1] = '$';
         strcpy(p+2,name);
-    }else if(type == MVARIABLE || type == MSUBPROGRAM){
+    }else if((type == MVARIABLE && subname == NULL) || type == MSUBPROGRAM){
         if((p = (char *)malloc(1+strlen(name)+1)) == NULL){
             printf("can not maloc in name_label\n");
             return NULL;
         }
         p[0] = '$';
         strcpy(p+1,name);
-    }else if(type == MPARAMETER){
+    }else if((type == MVARIABLE && subname != NULL) || type == MPARAMETER){
         if((p = (char *)malloc(1+strlen(name)+1+strlen(subname)+1)) == NULL){
             printf("can not maloc in name_label\n");
             return NULL;
@@ -148,11 +149,32 @@ void set_label(char *label){
     fprintf(fp, "%s\n", label);
 }
 
+void set_required(char *label, char *data){
+    struct REQUIRE_DATA *p, *q;
+
+    if((p = (struct REQUIRE_DATA *)malloc(sizeof(struct REQUIRE_DATA))) == NULL){
+        printf("can not malloc in set_required\n");
+        return;
+    }
+    p->label = label;
+    p->data = data;
+
+    q = list;
+    if(q == NULL){
+        list = p;
+    }else{
+        while(q->next != NULL){
+            q = q->next;
+        }
+        q->next = p;
+    }
+}
+
 /* Assembler instructions */
 void START(char *addr){
-    fprintf(fp, "\t%s\t", "START");
+    fprintf(fp, "\t%s", "START");
     if(addr != NONE){
-        fprintf(fp, "%s\n", addr);
+        fprintf(fp, "\t%s\n", addr);
     }else{
         fprintf(fp, "\n");
     }
@@ -163,20 +185,20 @@ void END(void){
 }
 
 void DS(int wordnum){
-    fprintf(fp, "\t%s\t%d\n", "DS", wordnum);
+    fprintf(fp, "\t%s\t%d\n", "DS   ", wordnum);
 }
 
 void DC(char *constant){
-    fprintf(fp, "\t%s\t%s\n", "DC", constant);
+    fprintf(fp, "\t%s\t%s\n", "DC   ", constant);
 }
 
 /* Macro instructions */
 void IN(char *input_area, char *len_area){
-    fprintf(fp, "\t%s\t%s, %s\n", "IN", input_area, len_area);
+    fprintf(fp, "\t%s\t%s, %s\n", "IN   ", input_area, len_area);
 }
 
 void OUT(char *output_area, char *len_area){
-    fprintf(fp, "\t%s\t%s, %s\n", "OUT", output_area, len_area);
+    fprintf(fp, "\t%s\t%s, %s\n", "OUT  ", output_area, len_area);
 }
 
 void RPUSH(void){
@@ -188,11 +210,11 @@ void RPOP(void){
 
 /* Machine language instructions */
 void LD_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "LD", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "LD   ", r1, r2);
 }
 
 void LD_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "LD", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "LD   ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -201,7 +223,7 @@ void LD_rm(char *r, char *addr, char *x){
 }
 
 void ST(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "ST", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "ST   ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -210,7 +232,7 @@ void ST(char *r, char *addr, char *x){
 }
 
 void LAD(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "LAD", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "LAD  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -219,11 +241,11 @@ void LAD(char *r, char *addr, char *x){
 }
 
 void ADDA_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "ADDA", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "ADDA ", r1, r2);
 }
 
 void ADDA_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "ADDA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "ADDA ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -232,11 +254,11 @@ void ADDA_rm(char *r, char *addr, char *x){
 }
 
 void ADDL_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "ADDL", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "ADDL ", r1, r2);
 }
 
 void ADDL_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "ADDL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "ADDL ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -245,11 +267,11 @@ void ADDL_rm(char *r, char *addr, char *x){
 }
 
 void SUBA_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "SUBA", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "SUBA ", r1, r2);
 }
 
 void SUBA_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SUBA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SUBA ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -258,11 +280,11 @@ void SUBA_rm(char *r, char *addr, char *x){
 }
 
 void SUBL_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "SUBL", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "SUBL ", r1, r2);
 }
 
 void SUBL_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SUBL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SUBL ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -271,11 +293,11 @@ void SUBL_rm(char *r, char *addr, char *x){
 }
 
 void MULA_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "MULA", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "MULA ", r1, r2);
 }
 
 void MULA_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "MULA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "MULA ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -284,11 +306,11 @@ void MULA_rm(char *r, char *addr, char *x){
 }
 
 void MULL_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "MULL", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "MULL ", r1, r2);
 }
 
 void MULL_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "MULL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "MULL ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -297,11 +319,11 @@ void MULL_rm(char *r, char *addr, char *x){
 }
 
 void DIVA_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "DIVA", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "DIVA ", r1, r2);
 }
 
 void DIVA_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "DIVA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "DIVA ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -310,11 +332,11 @@ void DIVA_rm(char *r, char *addr, char *x){
 }
 
 void DIVL_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "DIVL", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "DIVL ", r1, r2);
 }
 
 void DIVL_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "DIVL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "DIVL ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -323,11 +345,11 @@ void DIVL_rm(char *r, char *addr, char *x){
 }
 
 void AND_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "AND", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "AND  ", r1, r2);
 }
 
 void AND_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "AND", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "AND  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -336,11 +358,11 @@ void AND_rm(char *r, char *addr, char *x){
 }
 
 void OR_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "OR", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "OR   ", r1, r2);
 }
 
 void OR_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "OR", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "OR   ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -349,11 +371,11 @@ void OR_rm(char *r, char *addr, char *x){
 }
 
 void XOR_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "XOR", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "XOR  ", r1, r2);
 }
 
 void XOR_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "XOR", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "XOR  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -362,11 +384,11 @@ void XOR_rm(char *r, char *addr, char *x){
 }
 
 void CPA_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "CPA", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "CPA  ", r1, r2);
 }
 
 void CPA_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "CPA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "CPA  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -375,11 +397,11 @@ void CPA_rm(char *r, char *addr, char *x){
 }
 
 void CPL_rr(char *r1, char *r2){
-    fprintf(fp, "\t%s\t%s, %s\n", "CPL", r1, r2);
+    fprintf(fp, "\t%s\t%s, %s\n", "CPL  ", r1, r2);
 }
 
 void CPL_rm(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "CPL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "CPL  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -388,7 +410,7 @@ void CPL_rm(char *r, char *addr, char *x){
 }
 
 void SLA(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SLA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SLA  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -397,7 +419,7 @@ void SLA(char *r, char *addr, char *x){
 }
 
 void SRA(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SRA", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SRA  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -406,7 +428,7 @@ void SRA(char *r, char *addr, char *x){
 }
 
 void SLL(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SLL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SLL  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -415,7 +437,7 @@ void SLL(char *r, char *addr, char *x){
 }
 
 void SRL(char *r, char *addr, char *x){
-    fprintf(fp, "\t%s\t%s, %s", "SRL", r, addr);
+    fprintf(fp, "\t%s\t%s, %s", "SRL  ", r, addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -424,7 +446,7 @@ void SRL(char *r, char *addr, char *x){
 }
 
 void JPL(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JPL", addr);
+    fprintf(fp, "\t%s\t%s", "JPL  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -433,7 +455,7 @@ void JPL(char *addr, char *x){
 }
 
 void JMI(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JMI", addr);
+    fprintf(fp, "\t%s\t%s", "JMI  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -442,7 +464,7 @@ void JMI(char *addr, char *x){
 }
 
 void JNZ(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JNZ", addr);
+    fprintf(fp, "\t%s\t%s", "JNZ  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -451,7 +473,7 @@ void JNZ(char *addr, char *x){
 }
 
 void JZE(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JZE", addr);
+    fprintf(fp, "\t%s\t%s", "JZE  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -460,7 +482,7 @@ void JZE(char *addr, char *x){
 }
 
 void JOV(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JOV", addr);
+    fprintf(fp, "\t%s\t%s", "JOV  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -469,7 +491,7 @@ void JOV(char *addr, char *x){
 }
 
 void JUMP(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "JUMP", addr);
+    fprintf(fp, "\t%s\t%s", "JUMP ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -478,7 +500,7 @@ void JUMP(char *addr, char *x){
 }
 
 void PUSH(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "PUSH", addr);
+    fprintf(fp, "\t%s\t%s", "PUSH ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -487,11 +509,11 @@ void PUSH(char *addr, char *x){
 }
 
 void POP(char *r){
-    fprintf(fp, "\t%s\t%s\n", "POP", r);
+    fprintf(fp, "\t%s\t%s\n", "POP  ", r);
 }
 
 void CALL(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "CALL", addr);
+    fprintf(fp, "\t%s\t%s", "CALL ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -504,7 +526,7 @@ void RET(void){
 }
 
 void SVC(char *addr, char *x){
-    fprintf(fp, "\t%s\t%s", "SVC", addr);
+    fprintf(fp, "\t%s\t%s", "SVC  ", addr);
     if(x != NONE){
         fprintf(fp, ", %s\n", x);
     }else{
@@ -514,6 +536,34 @@ void SVC(char *addr, char *x){
 
 void NOP(void){
     fprintf(fp, "\t%s\n", "NOP");
+}
+
+/* allocate working area */
+void working_area_obj(void){
+    struct REQUIRE_DATA *p;
+
+    while(list != NULL){
+        p = list;
+        set_label(p->label);
+        if(p->data == NULL){
+            DC("0");
+        }else{
+            char *cp;
+            int length = strlen(p->data);
+
+            if((cp = (char *)malloc(length+3)) == NULL){
+                printf("can not malloc in obj_working_area\n");
+                return;
+            }
+            cp[0] = '\'';
+            strcpy(cp+1, p->data);
+            cp[1+length] = '\'';
+            cp[length+2] = '\0';
+            DC(cp);
+        }
+        list = list->next;
+        free(p);
+    }
 }
 
 /* Run time error */
@@ -549,6 +599,7 @@ void e0div_obj(void){
 }
 /* Run time error : range over in array index */
 void erov_obj(void){
+    set_label("EROV");
     CALL("WRITELINE", NONE);
     LAD(gr1, "EROV1", NONE);
     LD_rr(gr2, gr0);
@@ -856,7 +907,7 @@ void readline_obj(void){
 }
 
 /* use constant label */
-void use_label_obj(){
+void use_label_obj(void){
     /* integer value label */
     set_label("ONE");
     DC("1");
@@ -894,4 +945,29 @@ void use_label_obj(){
     DS(257);
     set_label("RPBBUF");
     DC("0");
+}
+
+/* lib */
+char *itoa(int num){
+    int tmp = num;
+    char *p;
+    int digit = 0;
+
+    while(tmp != 0){
+        tmp = tmp / 10;
+        digit++;
+    }
+
+    if((p = (char *)malloc(sizeof(char)*digit+1)) == NULL){
+        printf("can not malloc in itoa\n");
+        return NULL;
+    }
+    p[digit] = '\0';
+    while(num != 0){
+        int n = num % 10;
+        p[--digit] = n + '0';
+        num = num / 10;
+    }
+
+    return p;
 }

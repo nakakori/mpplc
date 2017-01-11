@@ -48,6 +48,7 @@ typedef struct _UNDEFINE_LIST UNDEFINE_LIST;
 #define TPBOOL 3
 #define TPARRAY 4
 #define TPPROC 5
+#define TPSTRING 6 // dont use symbol table module
 
 #define VARIABLE 0
 #define PARAMETER 1
@@ -69,7 +70,7 @@ extern ID *search_symtab(char *np);
 extern int register_symtab(char *np);
 extern int register_subpro(char *np);
 extern void register_type(int type, int arraysize);
-extern void register_param(void);
+extern UNDEFINE_LIST *register_param(void);
 
 extern int get_hash(char *str);
 

@@ -6,14 +6,19 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../../mppl_compiler/src/mpplc.h"
 #include "../../token_count/src/token-list.h"
 #include "../../token_count/src/scan.h"
 #include "../../cross_reference/src/symbol_table.h"
 #include "syntax_tree.h"
 
+#define LEFT_VAR 0
+#define RIGHT_VAR 1
+#define ARG_VAR 2
+
 struct LABELS {
     char *label;
-    struct LABELS next;
+    struct LABELS *next;
 };
 
 extern int init_ll_parse(char *filename);

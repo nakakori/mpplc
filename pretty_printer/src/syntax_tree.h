@@ -37,8 +37,9 @@ extern SYNTAX_TREE *synroot;
 
 extern void init_syntree(void);
 extern void init_node(void);
-extern void register_syntree(int t);
+extern SYNTAX_TREE * register_syntree(int t);
 extern void end_list_node(void);
 extern void release_data(void);
+extern void reset_paramlist(void);
 
 #endif /* _SYNTAX_TREE_H_ */

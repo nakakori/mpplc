@@ -1,12 +1,12 @@
-# Makefile for pp
+# Makefile for mpplc
 
 # Redefine Macro
 CC	= gcc
 CFLAGS	= -Wall -Wextra
 # Target
 TRGTDIR	= ./bin
-TARGET	= ${TRGTDIR}/cr
-TESTTAR	= ${TRGTDIR}/dcr
+TARGET	= ${TRGTDIR}/mpplc
+TESTTAR	= ${TRGTDIR}/dmpplc
 # Source
 SRCDIR	= ./src
 SOURCE	= ${wildcard ${SRCDIR}/*.c}
@@ -16,7 +16,7 @@ OBJDIR	= ${ROBJDIR}/${SRCDIR}
 OBJECTS	= ${addprefix ${OBJDIR}/, ${notdir ${SOURCE:.c=.o}}}
 
 #Used Source
-LIBSRC = ../pretty_printer/src/ll_parse.c ../pretty_printer/src/syntax_tree.c ../token_count/src/scan.c ../token_count/src/token-list.c
+LIBSRC = ../cross_reference/src/symbol_table.c ../pretty_printer/src/ll_parse.c ../pretty_printer/src/syntax_tree.c ../token_count/src/scan.c ../token_count/src/token-list.c
 
 .PHONY: all clean
 

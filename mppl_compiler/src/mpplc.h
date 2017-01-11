@@ -6,7 +6,7 @@
 #include <string.h>
 
 // #include "ll_parse.h"
-// #include "../../pretty_printer/src/ll_parse.h"
+#include "../../pretty_printer/src/ll_parse.h"
 
 #define ERROR -1
 
@@ -20,16 +20,28 @@
 #define gr6 "gr6"
 #define gr7 "gr7"
 
+// #define OBJFALSE "0"
+#define OBJTRUE "1"
+
 #define LABEL_LEN 5
 #define MPROGRAM 0
 #define MVARIABLE 1
 #define MSUBPROGRAM 2
 #define MPARAMETER 3
 
+struct REQUIRE_DATA{
+    char *label;
+    char *data;
+    struct REQUIRE_DATA *next;
+};
+
 /* label */
 extern char *create_label(void);
 extern char *name_label(int type, char *name, char *subname);
 extern void set_label(char *label);
+
+/* set data requiring work area */
+extern void set_required(char *label, char *str);
 
 /* Assembler instructions */
 extern void START(char *addr);
@@ -88,5 +100,8 @@ extern void CALL(char *addr, char *x);
 extern void RET(void);
 extern void SVC(char *addr, char *x);
 extern void NOP(void);
+
+/* lib */
+extern char *itoa(int n);
 
 #endif //_MPPLC_H_

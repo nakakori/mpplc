@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 // #include "ll_parse.h"
 #include "../../pretty_printer/src/ll_parse.h"

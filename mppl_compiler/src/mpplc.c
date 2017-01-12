@@ -5,7 +5,7 @@ static char *file;
 static int number;
 static struct REQUIRE_DATA *list;
 
-static int init_mpplc(char *filename);
+static int init_mpplc(int argc, char *argv[]);
 static void end_compile(void);
 // static void release_labels(void);
 
@@ -38,41 +38,64 @@ int main(int argc, char *argv[]) {
         return ERROR;
     }
 
-    if(init_mpplc(argv[1]) == ERROR){
+    if(init_mpplc(argc, argv) == ERROR){
         printf("error initilize\n");
         return ERROR;
     }
 
     if(parse_program() < 0){
-        // remove(file); // remove csl file
+        remove(file); // remove csl file
         return ERROR;
     }
 
     end_compile();
 
-    printf("finish compile\n");
-
     return 0;
 }
 
-int init_mpplc(char *filename){
+int init_mpplc(int argc, char *argv[]){
     char *p;
     char extension[] = ".csl";
     int i;
+    int opt;
+    char *filename;
+    file = NULL;
 
-    if((file = (char *)malloc(strlen(filename)+1)) == NULL){
-        printf("can not malloc in init_mpplc\n");
-        return ERROR;
+    while((opt = getopt(argc, argv, "o:")) != -1){
+        switch (opt) {
+            case 'o':
+                file = optarg;
+                int len = strlen(file);
+                for(i = 0; i < 4 ; i++){
+                    if(file[len-4+i] != extension[i]){
+                        printf("Error: output file extension is '.csl'\n");
+                        return ERROR;
+                    }
+                }
+                break;
+            default:
+                printf("Usage: ./bin/mpplc [-o csl file] source file\n");
+                return ERROR;
+        }
     }
 
-    strcpy(file, filename);
-    if((p = strstr(file, ".mpl")) == NULL){
-        printf("this file is not mppl file\n");
-        return ERROR;
+    filename = argv[optind];
+
+    if(file == NULL){
+        if((file = (char *)malloc(strlen(filename)+1)) == NULL){
+            printf("can not malloc in init_mpplc\n");
+            return ERROR;
+        }
+        strcpy(file, filename);
+        if((p = strstr(file, ".mpl")) == NULL){
+            printf("this file is not mppl file\n");
+            return ERROR;
+        }
+        for(i = 0; i < 4; i++){
+            p[i] = extension[i];
+        }
     }
-    for(i = 0; i < 4; i++){
-        p[i] = extension[i];
-    }
+
     if((fp = fopen(file, "w")) == NULL){
         return ERROR;
     }
@@ -89,7 +112,7 @@ void end_compile(void){
     write_obj();
     read_obj();
     use_label_obj();
-    // end_ll_parse();
+    end_ll_parse();
     fclose(fp);
 }
 
@@ -204,6 +227,7 @@ void OUT(char *output_area, char *len_area){
 void RPUSH(void){
     fprintf(fp, "\t%s\n", "RPUSH");
 }
+
 void RPOP(void){
     fprintf(fp, "\t%s\n", "RPOP");
 }
@@ -953,6 +977,10 @@ char *itoa(int num){
     char *p;
     int digit = 0;
 
+    if(num == 0){
+        digit++;
+    }
+
     while(tmp != 0){
         tmp = tmp / 10;
         digit++;
@@ -963,6 +991,9 @@ char *itoa(int num){
         return NULL;
     }
     p[digit] = '\0';
+    if(num == 0){
+        p[0] = '0';
+    }
     while(num != 0){
         int n = num % 10;
         p[--digit] = n + '0';

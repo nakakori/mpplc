@@ -789,7 +789,7 @@ void writebool_obj(void){
     RPUSH();
     CPA_rr(gr1, gr0);
     JZE("WB1", NONE);
-    LAD(gr1, "WBTRE", NONE);
+    LAD(gr1, "WBTRUE", NONE);
     JUMP("WB2", NONE);
 
     set_label("WB1");

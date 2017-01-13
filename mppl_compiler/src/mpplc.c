@@ -112,6 +112,8 @@ void end_compile(void){
     write_obj();
     read_obj();
     use_label_obj();
+    END();
+
     end_ll_parse();
     fclose(fp);
 }
@@ -194,8 +196,8 @@ void set_required(char *label, char *data){
 }
 
 /* Assembler instructions */
-void START(char *addr){
-    fprintf(fp, "\t%s", "START");
+void START(char *label, char *addr){
+    fprintf(fp, "%s\t%s", label, "START");
     if(addr != NONE){
         fprintf(fp, "\t%s\n", addr);
     }else{

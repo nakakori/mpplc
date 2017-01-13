@@ -1,5 +1,4 @@
-$$primefactor
-	START
+$$primefactor	START
 	LAD  	gr0, 0
 	CALL 	L0001
 	CALL 	FLUSH
@@ -31,13 +30,12 @@ L0005
 	JZE  	L0003
 	LD   	gr1, $i
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0006
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0006
-	JZE  	L0006
-	JUMP 	EROV
-L0006
+	JMI  	EROV
+	PUSH 	0, gr1
 	LAD  	gr1, 0
 	POP  	gr2
 	ST   	gr1, $factor, gr2
@@ -50,7 +48,7 @@ L0006
 	ST   	gr1, $i
 	JUMP 	L0002
 L0003
-	LAD  	gr1, L0007
+	LAD  	gr1, L0006
 	LD   	gr2, gr0
 	CALL 	WRITESTR
 	CALL 	WRITELINE
@@ -59,7 +57,7 @@ L0003
 	CALL 	READLINE
 	LAD  	gr1, 2
 	ST   	gr1, $can
-L0008
+L0007
 	LD   	gr1, $can
 	PUSH 	0, gr1
 	LD   	gr1, $n
@@ -71,28 +69,28 @@ L0008
 	LD   	gr1, gr2
 	POP  	gr2
 	CPA  	gr2, gr1
-	JPL  	L0010
+	JPL  	L0009
 	LAD  	gr1, 1
-	JUMP 	L0011
-L0010
+	JUMP 	L0010
+L0009
 	LD   	gr1, gr0
-L0011
+L0010
 	PUSH 	0, gr1
 	LD   	gr1, $can
 	PUSH 	0, gr1
 	LAD  	gr1, 200
 	POP  	gr2
 	CPA  	gr2, gr1
-	JMI  	L0012
+	JMI  	L0011
 	LD   	gr1, gr0
-	JUMP 	L0013
-L0012
+	JUMP 	L0012
+L0011
 	LAD  	gr1, 1
-L0013
+L0012
 	POP  	gr2
 	AND  	gr1, gr2
 	CPA  	gr1, gr0
-	JZE  	L0009
+	JZE  	L0008
 	LD   	gr1, $n
 	PUSH 	0, gr1
 	LD   	gr1, $n
@@ -115,14 +113,14 @@ L0013
 	LAD  	gr1, 0
 	POP  	gr2
 	CPA  	gr2, gr1
-	JNZ  	L0014
+	JNZ  	L0013
 	LD   	gr1, gr0
-	JUMP 	L0015
-L0014
+	JUMP 	L0014
+L0013
 	LAD  	gr1, 1
-L0015
+L0014
 	CPA  	gr1, gr0
-	JZE  	L0016
+	JZE  	L0015
 	LD   	gr1, $can
 	PUSH 	0, gr1
 	LAD  	gr1, 1
@@ -130,26 +128,23 @@ L0015
 	ADDA 	gr1, gr2
 	JOV  	EOVF
 	ST   	gr1, $can
-	JUMP 	L0017
-L0016
+	JUMP 	L0016
+L0015
 	LD   	gr1, $can
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0018
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0018
-	JZE  	L0018
-	JUMP 	EROV
-L0018
+	JMI  	EROV
+	PUSH 	0, gr1
 	LD   	gr1, $can
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0019
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0019
-	JZE  	L0019
-	JUMP 	EROV
-L0019
+	JMI  	EROV
 	LD   	gr1, $factor, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 1
@@ -166,9 +161,9 @@ L0019
 	JOV  	E0DIV
 	LD   	gr1, gr2
 	ST   	gr1, $n
-L0017
-	JUMP 	L0008
-L0009
+L0016
+	JUMP 	L0007
+L0008
 	LAD  	gr1, 0
 	ST   	gr1, $i
 	LD   	gr1, $n
@@ -176,32 +171,29 @@ L0009
 	LAD  	gr1, 200
 	POP  	gr2
 	CPA  	gr2, gr1
-	JMI  	L0020
+	JMI  	L0017
 	LD   	gr1, gr0
-	JUMP 	L0021
-L0020
+	JUMP 	L0018
+L0017
 	LAD  	gr1, 1
-L0021
+L0018
 	CPA  	gr1, gr0
-	JZE  	L0022
+	JZE  	L0019
 	LD   	gr1, $n
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0023
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0023
-	JZE  	L0023
-	JUMP 	EROV
-L0023
+	JMI  	EROV
+	PUSH 	0, gr1
 	LD   	gr1, $n
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0024
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0024
-	JZE  	L0024
-	JUMP 	EROV
-L0024
+	JMI  	EROV
 	LD   	gr1, $factor, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 1
@@ -212,66 +204,62 @@ L0024
 	ST   	gr1, $factor, gr2
 	LAD  	gr1, 1
 	ST   	gr1, $n
-L0022
-L0025
+L0019
+L0020
 	LD   	gr1, $i
 	PUSH 	0, gr1
 	LAD  	gr1, 200
 	POP  	gr2
 	CPA  	gr2, gr1
-	JMI  	L0027
+	JMI  	L0022
 	LD   	gr1, gr0
-	JUMP 	L0028
-L0027
+	JUMP 	L0023
+L0022
 	LAD  	gr1, 1
-L0028
+L0023
 	CPA  	gr1, gr0
-	JZE  	L0026
+	JZE  	L0021
 	LD   	gr1, $i
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0029
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0029
-	JZE  	L0029
-	JUMP 	EROV
-L0029
+	JMI  	EROV
 	LD   	gr1, $factor, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 0
 	POP  	gr2
 	CPA  	gr2, gr1
-	JNZ  	L0030
+	JNZ  	L0024
 	LD   	gr1, gr0
-	JUMP 	L0031
-L0030
+	JUMP 	L0025
+L0024
 	LAD  	gr1, 1
-L0031
+L0025
 	CPA  	gr1, gr0
-	JZE  	L0032
-	LAD  	gr1, L0033
+	JZE  	L0026
+	LAD  	gr1, L0027
 	LD   	gr2, gr0
 	CALL 	WRITESTR
 	LD   	gr1, $i
 	LD   	gr2, gr0
 	CALL 	WRITEINT
-	LAD  	gr1, L0034
+	LAD  	gr1, L0028
 	LD   	gr2, gr0
 	CALL 	WRITESTR
 	LD   	gr1, $i
 	LAD  	gr2, 200
-	CPA  	gr1, gr2
-	JMI  	L0035
+	CPA  	gr2, gr1
+	JMI  	EROV
+	JZE  	EROV
 	CPA  	gr1, gr0
-	JPL  	L0035
-	JZE  	L0035
-	JUMP 	EROV
-L0035
+	JMI  	EROV
 	LD   	gr1, $factor, gr1
 	LD   	gr2, gr0
 	CALL 	WRITEINT
 	CALL 	WRITELINE
-L0032
+L0026
 	LD   	gr1, $i
 	PUSH 	0, gr1
 	LAD  	gr1, 1
@@ -279,45 +267,45 @@ L0032
 	ADDA 	gr1, gr2
 	JOV  	EOVF
 	ST   	gr1, $i
-	JUMP 	L0025
-L0026
+	JUMP 	L0020
+L0021
 	LD   	gr1, $n
 	PUSH 	0, gr1
 	LAD  	gr1, 1
 	POP  	gr2
 	CPA  	gr2, gr1
-	JPL  	L0036
+	JPL  	L0029
 	LD   	gr1, gr0
-	JUMP 	L0037
-L0036
+	JUMP 	L0030
+L0029
 	LAD  	gr1, 1
-L0037
+L0030
 	CPA  	gr1, gr0
-	JZE  	L0038
-	LAD  	gr1, L0039
+	JZE  	L0031
+	LAD  	gr1, L0032
 	LD   	gr2, gr0
 	CALL 	WRITESTR
 	LD   	gr1, $n
 	LD   	gr2, gr0
 	CALL 	WRITEINT
-	LAD  	gr1, L0040
+	LAD  	gr1, L0033
 	LD   	gr2, gr0
 	CALL 	WRITESTR
 	LAD  	gr1, 1
 	LD   	gr2, gr0
 	CALL 	WRITEINT
 	CALL 	WRITELINE
-L0038
+L0031
 	RET
-L0007
+L0006
 	DC   	'Input positive integer'
-L0033
+L0027
 	DC   	'    '
-L0034
+L0028
 	DC   	' ** '
-L0039
+L0032
 	DC   	'    '
-L0040
+L0033
 	DC   	' ** '
 EOVF
 	CALL 	WRITELINE
@@ -597,3 +585,4 @@ IBUF
 	DS   	257
 RPBBUF
 	DC   	0
+	END

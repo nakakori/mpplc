@@ -24,7 +24,7 @@ for path in ${dir[@]}; do
   for file in $path/*; do
     mplfile=${file##${path}/}
     resultfile=${mplfile%.*}.csl
-    echo $result_dirpath/${path##${test_dir}/}/$resultfile
+    # echo $result_dirpath/${path##${test_dir}/}/$resultfile
     ./$bin_path -o $result_dirpath/${path##${test_dir}/}/$resultfile $file
   done
 done

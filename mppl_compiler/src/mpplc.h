@@ -45,7 +45,7 @@ extern void set_label(char *label);
 extern void set_required(char *label, char *str);
 
 /* Assembler instructions */
-extern void START(char *addr);
+extern void START(char *label, char *addr);
 extern void END(void);
 extern void DS(int wordnum);
 extern void DC(char *constant);

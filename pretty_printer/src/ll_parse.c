@@ -109,8 +109,6 @@ extern int parse_program(void){
     }
     register_syntree(token);
 
-    set_label(name_label(MPROGRAM, string_attr, NONE));
-
     token = scan();
     if(token != TSEMI){
         create_errmes("';' is not found");
@@ -118,7 +116,7 @@ extern int parse_program(void){
     }
     register_syntree(token);
 
-    START(NONE);
+    START(name_label(MPROGRAM, string_attr, NONE), NONE);
     LAD(gr0, "0", NONE);
     label = create_label();
     CALL(label, NONE);
@@ -1030,21 +1028,18 @@ static int var(){
 
         // POP(gr1); // gr1 <-- expression value
         LAD(gr2, itoa(var->itype->arraysize), NONE); // gr2 <-- arraysize
-        CPA_rr(gr1, gr2); // whether gr1 < arraysize
-        char *inrange = create_label();
-        JMI(inrange, NONE); // gr1 < gr2 is in array size range
-        CPA_rr(gr1, gr0); // whether gr1 >= 0
-        JPL(inrange, NONE); // gr1 > 0
-        JZE(inrange, NONE); // gr1 = 0
-        JUMP("EROV", NONE);
-        set_label(inrange);
+        CPA_rr(gr2, gr1); // whether arraysize <= gr1
+        JMI("EROV", NONE); // gr2 is in array size range < gr1: ERROR
+        JZE("EROV", NONE); // gr2 = gr1: ERROR(MAX:arraysize-1)
+        CPA_rr(gr1, gr0);  // whether gr1 < 0: ERROR
+        JMI("EROV", NONE);
         if(type_curvar == RIGHT_VAR){
             int lscope = (var->ispara == PARAMETER) ? MPARAMETER : MVARIABLE;
             char *label = name_label(lscope, var->name, var->procname);
             LD_rm(gr1, label, gr1); // gr1 <-- (variable + gr1)
             // PUSH("0", gr1);
         }else{
-            // PUSH(gr1, NONE); // stack top is element value
+            PUSH("0", gr1); // stack top is element value
         }
     }else{
         if(type_curvar == RIGHT_VAR){

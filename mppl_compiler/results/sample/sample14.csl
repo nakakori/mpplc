@@ -1,5 +1,4 @@
-$$sample14
-	START
+$$sample14	START
 	LAD  	gr0, 0
 	CALL 	L0001
 	CALL 	FLUSH
@@ -550,3 +549,4 @@ IBUF
 	DS   	257
 RPBBUF
 	DC   	0
+	END

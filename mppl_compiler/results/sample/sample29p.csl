@@ -868,9 +868,9 @@ L0001
 	ST   	gr1, $endflag
 L0054
 	LD   	gr1, $endflag
+	LAD  	gr2, 1
 	CPA  	gr0, gr1
 	JZE  	L0056
-	LAD  	gr2, 1
 	LD   	gr1, gr2
 L0056
 	XOR  	gr1, gr2

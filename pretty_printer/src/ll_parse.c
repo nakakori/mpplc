@@ -1438,10 +1438,10 @@ static int factor(){
             }
             // gr1 is factor value
             // POP(gr1); // gr1 <-- var value(true(not 0) or false(0))
+            LAD(gr2, "1", NONE); // gr2 <-- 1
             CPA_rr(gr0, gr1); // whether gr1 is 0 or not
             char *not = create_label();
             JZE(not, NONE); // if gr1 is 0, JUMP logical not label
-            LAD(gr2, "1", NONE); // gr2 <-- 1
             LD_rr(gr1, gr2); // gr1 <-- true(1) (gr1 may be not 1)
             set_label(not);
             XOR_rr(gr1, gr2); // logical not

@@ -15,6 +15,7 @@ $counter
 	ST   	gr1, $yen%counter
 	PUSH 	0, gr2
 L0002
+	LD   	gr1, $n
 	PUSH 	0, gr1
 	LD   	gr1, $yen%counter
 	LD   	gr1, 0, gr1

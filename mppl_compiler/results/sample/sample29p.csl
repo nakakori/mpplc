@@ -247,6 +247,7 @@ $lcm
 	ST   	gr1, $a%lcm
 	PUSH 	0, gr2
 	LD   	gr1, $a%lcm
+	LD   	gr1, 0, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 0
 	POP  	gr2
@@ -318,6 +319,7 @@ $reduce
 	ST   	gr1, $a1%reduce
 	PUSH 	0, gr2
 	LD   	gr1, $a1%reduce
+	LD   	gr1, 0, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 0
 	POP  	gr2
@@ -699,6 +701,7 @@ $printfinal
 	ST   	gr1, $a%printfinal
 	PUSH 	0, gr2
 	LD   	gr1, $a%printfinal
+	LD   	gr1, 0, gr1
 	PUSH 	0, gr1
 	LAD  	gr1, 0
 	POP  	gr2

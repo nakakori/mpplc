@@ -637,6 +637,7 @@ static int branch(){
     register_syntree(token);
 
     token = scan();
+    switch_var_type(RIGHT_VAR);
     if((type = expression()) == ERROR){
         return ERROR;
     }
@@ -702,6 +703,7 @@ static int loop(){
     set_label(label1); // if expression value is true, JUMP label1
 
     token = scan();
+    switch_var_type(RIGHT_VAR);
     if((type = expression()) == ERROR){
         return ERROR;
     }

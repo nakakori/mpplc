@@ -39,6 +39,7 @@ L0005
 	LAD  	gr1, $y
 	CALL 	READINT
 	CALL 	READLINE
+	LD   	gr1, $com
 	PUSH 	0, gr1
 	LAD  	gr1, 99
 	POP  	gr2

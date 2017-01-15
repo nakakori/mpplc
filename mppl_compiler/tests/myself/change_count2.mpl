@@ -7,7 +7,9 @@ begin
         count := count + 1;
         n := n - yen;
     end;
-    writeln(yen:5, ' yen : ', count);
+    if count > 0 then
+        writeln(yen:5, ' yen : ', count);
+    count := 0;
 end;
 begin
   writeln('please input change');  readln(n);    count := 0;

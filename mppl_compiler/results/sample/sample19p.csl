@@ -200,12 +200,12 @@ L0013
 	ST   	gr1, 0, gr2
 	JUMP 	L0015
 L0014
-	LAD  	gr1, $a%gcm
+	LD   	gr1, $a%gcm
 	PUSH 	0, gr1
 	LAD  	gr1, $aa%gcm
 	PUSH 	0, gr1
 	CALL 	$abs
-	LAD  	gr1, $b%gcm
+	LD   	gr1, $b%gcm
 	PUSH 	0, gr1
 	LAD  	gr1, $bb%gcm
 	PUSH 	0, gr1
@@ -214,7 +214,7 @@ L0014
 	PUSH 	0, gr1
 	LAD  	gr1, $bb%gcm
 	PUSH 	0, gr1
-	LAD  	gr1, $gc%gcm
+	LD   	gr1, $gc%gcm
 	PUSH 	0, gr1
 	LAD  	gr1, $lc%gcm
 	PUSH 	0, gr1
@@ -277,12 +277,12 @@ L0019
 	ST   	gr1, 0, gr2
 	JUMP 	L0021
 L0020
-	LAD  	gr1, $a%lcm
+	LD   	gr1, $a%lcm
 	PUSH 	0, gr1
 	LAD  	gr1, $aa%lcm
 	PUSH 	0, gr1
 	CALL 	$abs
-	LAD  	gr1, $b%lcm
+	LD   	gr1, $b%lcm
 	PUSH 	0, gr1
 	LAD  	gr1, $bb%lcm
 	PUSH 	0, gr1
@@ -293,7 +293,7 @@ L0020
 	PUSH 	0, gr1
 	LAD  	gr1, $gc%lcm
 	PUSH 	0, gr1
-	LAD  	gr1, $lc%lcm
+	LD   	gr1, $lc%lcm
 	PUSH 	0, gr1
 	CALL 	$gcmlcm
 L0021
@@ -387,9 +387,9 @@ L0029
 	POP  	gr2
 	ST   	gr1, 0, gr2
 L0030
-	LAD  	gr1, $a1%reduce
+	LD   	gr1, $a1%reduce
 	PUSH 	0, gr1
-	LAD  	gr1, $a2%reduce
+	LD   	gr1, $a2%reduce
 	PUSH 	0, gr1
 	LAD  	gr1, $gc%reduce
 	PUSH 	0, gr1
@@ -442,9 +442,9 @@ $sum
 	POP  	gr1
 	ST   	gr1, $x1%sum
 	PUSH 	0, gr2
-	LAD  	gr1, $x2%sum
+	LD   	gr1, $x2%sum
 	PUSH 	0, gr1
-	LAD  	gr1, $y2%sum
+	LD   	gr1, $y2%sum
 	PUSH 	0, gr1
 	LAD  	gr1, $lc%sum
 	PUSH 	0, gr1
@@ -498,9 +498,9 @@ $sum
 	LD   	gr1, $lc%sum
 	POP  	gr2
 	ST   	gr1, 0, gr2
-	LAD  	gr1, $x1%sum
+	LD   	gr1, $x1%sum
 	PUSH 	0, gr1
-	LAD  	gr1, $x2%sum
+	LD   	gr1, $x2%sum
 	PUSH 	0, gr1
 	CALL 	$reduce
 	RET
@@ -527,17 +527,17 @@ $sub
 	POP  	gr1
 	ST   	gr1, $x1%sub
 	PUSH 	0, gr2
-	LAD  	gr1, $x1%sub
+	LD   	gr1, $x1%sub
 	PUSH 	0, gr1
-	LAD  	gr1, $x2%sub
+	LD   	gr1, $x2%sub
 	PUSH 	0, gr1
 	LD   	gr2, gr0
 	SUBA 	gr2, gr1
 	JOV  	EOVF
 	LD   	gr1, gr2
-	LAD  	gr1, $y1%sub
+	LD   	gr1, $y1%sub
 	PUSH 	0, gr1
-	LAD  	gr1, $y2%sub
+	LD   	gr1, $y2%sub
 	PUSH 	0, gr1
 	CALL 	$sum
 	RET
@@ -566,9 +566,9 @@ $mult
 	POP  	gr1
 	ST   	gr1, $x1%mult
 	PUSH 	0, gr2
-	LAD  	gr1, $x1%mult
+	LD   	gr1, $x1%mult
 	PUSH 	0, gr1
-	LAD  	gr1, $y2%mult
+	LD   	gr1, $y2%mult
 	PUSH 	0, gr1
 	LAD  	gr1, $gc%mult
 	PUSH 	0, gr1
@@ -594,9 +594,9 @@ $mult
 	JOV  	E0DIV
 	LD   	gr1, gr2
 	ST   	gr1, $y22%mult
-	LAD  	gr1, $x2%mult
+	LD   	gr1, $x2%mult
 	PUSH 	0, gr1
-	LAD  	gr1, $y1%mult
+	LD   	gr1, $y1%mult
 	PUSH 	0, gr1
 	LAD  	gr1, $gc%mult
 	PUSH 	0, gr1
@@ -644,9 +644,9 @@ $mult
 	JOV  	EOVF
 	POP  	gr2
 	ST   	gr1, 0, gr2
-	LAD  	gr1, $x1%mult
+	LD   	gr1, $x1%mult
 	PUSH 	0, gr1
-	LAD  	gr1, $x2%mult
+	LD   	gr1, $x2%mult
 	PUSH 	0, gr1
 	CALL 	$reduce
 	RET
@@ -669,13 +669,13 @@ $divide
 	POP  	gr1
 	ST   	gr1, $x1%divide
 	PUSH 	0, gr2
-	LAD  	gr1, $x1%divide
+	LD   	gr1, $x1%divide
 	PUSH 	0, gr1
-	LAD  	gr1, $x2%divide
+	LD   	gr1, $x2%divide
 	PUSH 	0, gr1
-	LAD  	gr1, $y2%divide
+	LD   	gr1, $y2%divide
 	PUSH 	0, gr1
-	LAD  	gr1, $y1%divide
+	LD   	gr1, $y1%divide
 	PUSH 	0, gr1
 	CALL 	$mult
 	RET

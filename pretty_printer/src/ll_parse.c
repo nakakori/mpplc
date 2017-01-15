@@ -846,7 +846,16 @@ static int arrange_expression(){
      *     and expression value store at this area
      */
     if(curvar != NULL){ // variable
-        LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+        if(curvar->ispara == VARIABLE){
+            char *x = NULL;
+            if(curvar->itype->ttype == TPARRAY){
+                POP(gr2);
+                x = gr2;
+            }
+            LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), x);
+        }else{
+            LD_rm(gr1, name_label(MPARAMETER, curvar->name, curvar->procname), NONE);
+        }
         PUSH("0", gr1);
     }else{ // other
         char *label = create_label();
@@ -873,7 +882,16 @@ static int arrange_expression(){
         }
 
         if(curvar != NULL){ // variable
-            LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), NONE);
+            if(curvar->ispara == VARIABLE){
+                char *x = NULL;
+                if(curvar->itype->ttype == TPARRAY){
+                    POP(gr2);
+                    x = gr2;
+                }
+                LAD(gr1, name_label(MVARIABLE, curvar->name, curvar->procname), x);
+            }else{
+                LD_rm(gr1, name_label(MPARAMETER, curvar->name, curvar->procname), NONE);
+            }
             PUSH("0", gr1);
         }else{ // other
             char *label = create_label();
